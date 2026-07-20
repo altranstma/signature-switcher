@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <title>Manage Signatures</title>
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <link rel="stylesheet" href="taskpane.css" />
+</head>
+<body>
+    <div id="app" class="hidden">
+        <header>
+            <h1>Signature Switcher</h1>
+            <p class="subtitle">Manage your own signature for each address you send from.</p>
+        </header>
+
+        <section class="current-address-box">
+            <div class="label">Currently composing as</div>
+            <div id="currentAddress" class="current-address">detecting&hellip;</div>
+            <button id="useCurrentBtn" type="button" class="link-btn">Add/edit signature for this address</button>
+        </section>
+
+        <section id="statusMessage" class="status hidden"></section>
+
+        <section>
+            <h2>Your configured addresses</h2>
+            <ul id="signatureList" class="signature-list"></ul>
+            <p id="emptyState" class="empty-state hidden">No signatures configured yet. Add one below.</p>
+        </section>
+
+        <section class="editor" id="editorSection">
+            <h2 id="editorTitle">Add a signature</h2>
+            <label class="field-label" for="addressInput">Email address (alias or shared mailbox)</label>
+            <input id="addressInput" type="email" placeholder="e.g. sales@altrans.net" autocomplete="off" />
+
+            <label class="field-label">Signature</label>
+            <div class="toolbar">
+                <button type="button" data-cmd="bold" title="Bold"><b>B</b></button>
+                <button type="button" data-cmd="italic" title="Italic"><i>I</i></button>
+                <button type="button" data-cmd="underline" title="Underline"><u>U</u></button>
+                <button type="button" data-cmd="createLink" title="Insert link">Link</button>
+                <button type="button" data-cmd="unlink" title="Remove link">Unlink</button>
+                <button type="button" data-cmd="removeFormat" title="Clear formatting">Clear</button>
+            </div>
+            <div id="signatureEditor" class="signature-editor" contenteditable="true"></div>
+
+            <div class="button-row">
+                <button id="saveBtn" type="button" class="primary-btn">Save signature</button>
+                <button id="cancelBtn" type="button" class="secondary-btn hidden">Cancel edit</button>
+            </div>
+        </section>
+    </div>
+
+    <script type="text/javascript" src="taskpane.js"></script>
+</body>
+</html>
