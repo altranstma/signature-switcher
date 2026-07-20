@@ -1,0 +1,166 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/vDevPreview/MicrosoftTeams.schema.json",
+  "id": "61bcae55-9f55-452b-88a5-612a7a108623",
+  "version": "1.0.0",
+  "manifestVersion": "devPreview",
+  "name": {
+    "short": "Signature Switcher",
+    "full": "ALTRANS Signature Switcher"
+  },
+  "description": {
+    "short": "Automatically switches your email signature based on the sending address.",
+    "full": "Automatically applies the right signature when you send from a personal alias or a shared mailbox you have send-as/send-on-behalf-of permission for. Manage your own signatures per address from the task pane."
+  },
+  "icons": {
+    "outline": "assets/outline.png",
+    "color": "assets/color.png"
+  },
+  "accentColor": "#2456A6",
+  "developer": {
+    "name": "ALTRANS",
+    "websiteUrl": "https://www.altrans.net",
+    "privacyUrl": "https://www.altrans.net/privacy",
+    "termsOfUseUrl": "https://www.altrans.net/terms"
+  },
+  "localizationInfo": {
+    "defaultLanguageTag": "en-us"
+  },
+  "authorization": {
+    "permissions": {
+      "resourceSpecific": [
+        {
+          "name": "MailboxItem.ReadWrite.User",
+          "type": "Delegated"
+        }
+      ]
+    }
+  },
+  "validDomains": [
+    "https://altranstma.github.io"
+  ],
+  "extensions": [
+    {
+      "requirements": {
+        "scopes": ["mail"],
+        "capabilities": [
+          {
+            "name": "Mailbox",
+            "minVersion": "1.13"
+          }
+        ]
+      },
+      "runtimes": [
+        {
+          "requirements": {
+            "capabilities": [
+              {
+                "name": "Mailbox",
+                "minVersion": "1.13"
+              }
+            ]
+          },
+          "id": "autorun_runtime",
+          "type": "general",
+          "code": {
+            "page": "https://altranstma.github.io/signature-switcher/launchevent.html",
+            "script": "https://altranstma.github.io/signature-switcher/launchevent.js"
+          },
+          "lifetime": "short",
+          "actions": [
+            {
+              "id": "onMessageFromChangedHandler",
+              "type": "executeFunction"
+            },
+            {
+              "id": "onNewMessageComposeHandler",
+              "type": "executeFunction"
+            }
+          ]
+        },
+        {
+          "requirements": {
+            "capabilities": [
+              {
+                "name": "Mailbox",
+                "minVersion": "1.3"
+              }
+            ]
+          },
+          "id": "TaskPaneRuntime",
+          "type": "general",
+          "code": {
+            "page": "https://altranstma.github.io/signature-switcher/taskpane.html"
+          },
+          "lifetime": "short",
+          "actions": [
+            {
+              "id": "ShowTaskPane",
+              "type": "openPage",
+              "view": "homepage"
+            }
+          ]
+        }
+      ],
+      "ribbons": [
+        {
+          "contexts": ["mailCompose"],
+          "tabs": [
+            {
+              "builtInTabId": "TabDefault",
+              "groups": [
+                {
+                  "id": "sigSwitcherGroup",
+                  "label": "Signatures",
+                  "icons": [
+                    { "size": 16, "url": "https://altranstma.github.io/signature-switcher/assets/icon-16.png" },
+                    { "size": 32, "url": "https://altranstma.github.io/signature-switcher/assets/icon-32.png" },
+                    { "size": 80, "url": "https://altranstma.github.io/signature-switcher/assets/icon-80.png" }
+                  ],
+                  "controls": [
+                    {
+                      "id": "openSignatureManagerButton",
+                      "type": "button",
+                      "label": "Manage Signatures",
+                      "icons": [
+                        { "size": 16, "url": "https://altranstma.github.io/signature-switcher/assets/icon-16.png" },
+                        { "size": 32, "url": "https://altranstma.github.io/signature-switcher/assets/icon-32.png" },
+                        { "size": 80, "url": "https://altranstma.github.io/signature-switcher/assets/icon-80.png" }
+                      ],
+                      "supertip": {
+                        "title": "Manage Signatures",
+                        "description": "Add, edit, or remove your signature for each alias or shared mailbox you send from."
+                      },
+                      "actionId": "ShowTaskPane"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "autoRunEvents": [
+        {
+          "requirements": {
+            "capabilities": [
+              {
+                "name": "Mailbox",
+                "minVersion": "1.13"
+              }
+            ]
+          },
+          "events": [
+            {
+              "type": "newMessageComposeCreated",
+              "actionId": "onNewMessageComposeHandler"
+            },
+            {
+              "type": "messageFromChanged",
+              "actionId": "onMessageFromChangedHandler"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
