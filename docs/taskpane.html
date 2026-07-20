@@ -33,16 +33,69 @@
             <label class="field-label" for="addressInput">Email address (alias or shared mailbox)</label>
             <input id="addressInput" type="email" placeholder="e.g. sales@altrans.net" autocomplete="off" />
 
-            <label class="field-label">Signature</label>
-            <div class="toolbar">
-                <button type="button" data-cmd="bold" title="Bold"><b>B</b></button>
-                <button type="button" data-cmd="italic" title="Italic"><i>I</i></button>
-                <button type="button" data-cmd="underline" title="Underline"><u>U</u></button>
-                <button type="button" data-cmd="createLink" title="Insert link">Link</button>
-                <button type="button" data-cmd="unlink" title="Remove link">Unlink</button>
-                <button type="button" data-cmd="removeFormat" title="Clear formatting">Clear</button>
+            <div class="mode-tabs">
+                <button type="button" id="builderTab" class="mode-tab active">Build from template</button>
+                <button type="button" id="customTab" class="mode-tab">Custom HTML</button>
             </div>
-            <div id="signatureEditor" class="signature-editor" contenteditable="true"></div>
+
+            <div id="builderPane">
+                <label class="field-label" for="f_logoUrl">Logo image URL</label>
+                <input id="f_logoUrl" type="text" placeholder="https://example.com/logo.png" autocomplete="off" />
+
+                <label class="field-label" for="f_name">Full name</label>
+                <input id="f_name" type="text" placeholder="Daniel Oliver" autocomplete="off" />
+
+                <div class="field-row">
+                    <div>
+                        <label class="field-label" for="f_title">Title</label>
+                        <input id="f_title" type="text" placeholder="Executive Director" autocomplete="off" />
+                    </div>
+                    <div>
+                        <label class="field-label" for="f_company">Company</label>
+                        <input id="f_company" type="text" placeholder="Emeryville TMA" autocomplete="off" />
+                    </div>
+                </div>
+
+                <div class="field-row">
+                    <div>
+                        <label class="field-label" for="f_email">Email</label>
+                        <input id="f_email" type="text" placeholder="admin@example.com" autocomplete="off" />
+                    </div>
+                    <div>
+                        <label class="field-label" for="f_phone">Phone</label>
+                        <input id="f_phone" type="text" placeholder="408-258-7267, 503" autocomplete="off" />
+                    </div>
+                </div>
+
+                <label class="field-label" for="f_website">Website (optional, shown instead of/with email)</label>
+                <input id="f_website" type="text" placeholder="https://altrans.net" autocomplete="off" />
+
+                <label class="field-label">Social links</label>
+                <div id="socialLinksList" class="social-links-list"></div>
+                <button type="button" id="addSocialLinkBtn" class="link-btn">+ Add social link</button>
+
+                <label class="field-label" for="f_taglineText">Tagline (optional)</label>
+                <input id="f_taglineText" type="text" placeholder="Have you heard? Click to receive updates." autocomplete="off" />
+                <label class="field-label" for="f_taglineUrl">Tagline link (optional)</label>
+                <input id="f_taglineUrl" type="text" placeholder="https://example.com/updates" autocomplete="off" />
+
+                <label class="field-label">Preview</label>
+                <div id="builderPreview" class="builder-preview"></div>
+            </div>
+
+            <div id="customPane" class="hidden">
+                <label class="field-label">Signature</label>
+                <div class="toolbar">
+                    <button type="button" data-cmd="bold" title="Bold"><b>B</b></button>
+                    <button type="button" data-cmd="italic" title="Italic"><i>I</i></button>
+                    <button type="button" data-cmd="underline" title="Underline"><u>U</u></button>
+                    <button type="button" data-cmd="createLink" title="Insert link">Link</button>
+                    <button type="button" data-cmd="unlink" title="Remove link">Unlink</button>
+                    <button type="button" data-cmd="removeFormat" title="Clear formatting">Clear</button>
+                </div>
+                <div id="signatureEditor" class="signature-editor" contenteditable="true"></div>
+                <p class="hint">Paste a signature copied from Word, Outlook's own signature settings, or another source — images and tables will carry over.</p>
+            </div>
 
             <div class="button-row">
                 <button id="saveBtn" type="button" class="primary-btn">Save signature</button>

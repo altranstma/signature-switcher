@@ -129,12 +129,102 @@ h2 {
     margin: 10px 0 4px;
 }
 
-#addressInput {
+#addressInput,
+.builderPane input[type="text"],
+#builderPane input[type="text"] {
     width: 100%;
     padding: 6px 8px;
     border: 1px solid #c7c7c7;
     border-radius: 4px;
     font-size: 13px;
+}
+
+.mode-tabs {
+    display: flex;
+    gap: 4px;
+    margin: 10px 0 4px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.mode-tab {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 6px 4px;
+    margin-right: 12px;
+    font-size: 13px;
+    color: #616161;
+    cursor: pointer;
+}
+
+.mode-tab.active {
+    color: #2456A6;
+    border-bottom-color: #2456A6;
+    font-weight: 600;
+}
+
+.field-row {
+    display: flex;
+    gap: 10px;
+}
+
+.field-row > div {
+    flex: 1;
+    min-width: 0;
+}
+
+.social-links-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.social-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.social-row select {
+    flex: 0 0 auto;
+    padding: 5px;
+    border: 1px solid #c7c7c7;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.social-row input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    padding: 5px 8px;
+    border: 1px solid #c7c7c7;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.social-row .social-custom-icon {
+    flex: 1;
+}
+
+.social-remove {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+.builder-preview {
+    border: 1px dashed #c7c7c7;
+    border-radius: 4px;
+    padding: 12px;
+    margin-top: 4px;
+    background: #fafafa;
+    overflow-x: auto;
+}
+
+.hint {
+    font-size: 12px;
+    color: #757575;
+    margin: 6px 0 0;
 }
 
 .toolbar {

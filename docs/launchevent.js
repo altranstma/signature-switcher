@@ -28,7 +28,9 @@ function applyForCurrentAddress(event) {
 
         const address = (fromResult.value.emailAddress || "").toLowerCase().trim();
         const signatureMap = getSignatureMap();
-        const configuredSignature = signatureMap[address];
+        const entry = signatureMap[address];
+        // Entries are {mode, html, fields?} objects; tolerate a legacy plain-string entry too.
+        const configuredSignature = entry && (typeof entry === "string" ? entry : entry.html);
 
         item.loadCustomPropertiesAsync((propsResult) => {
             if (propsResult.status === Office.AsyncResultStatus.Failed) {
