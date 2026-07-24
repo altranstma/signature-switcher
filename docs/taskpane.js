@@ -1,6 +1,11 @@
 /* global Office, SOCIAL_PLATFORMS, buildSignatureHtml */
 
 const SIGNATURE_MAP_KEY = "signatureMap";
+const LOG_PREFIX = "[SigSwitcher-Taskpane]";
+
+function byteSize(value) {
+    return new Blob([JSON.stringify(value)]).size;
+}
 
 let editingAddress = null; // null = adding new; otherwise the original key being edited
 let socialLinks = []; // working list of {id, platform, url, customIconUrl} while editing
@@ -220,8 +225,18 @@ function compactSignatureMap(map) {
 }
 
 function saveSignatureMap(map, onDone) {
-    Office.context.roamingSettings.set(SIGNATURE_MAP_KEY, compactSignatureMap(map));
+    const beforeBytes = byteSize(map);
+    compactSignatureMap(map);
+    const afterBytes = byteSize(map);
+    const perEntryBytes = Object.keys(map)
+        .map((address) => ({ address, bytes: byteSize(map[address]) }))
+        .sort((a, b) => b.bytes - a.bytes);
+    console.log(LOG_PREFIX, "map bytes before/after compaction:", beforeBytes, "/", afterBytes);
+    console.log(LOG_PREFIX, "per-entry bytes (largest first):", JSON.stringify(perEntryBytes));
+
+    Office.context.roamingSettings.set(SIGNATURE_MAP_KEY, map);
     Office.context.roamingSettings.saveAsync((result) => {
+        console.log(LOG_PREFIX, "roamingSettings.saveAsync ->", result.status, result.error ? JSON.stringify(result.error) : "");
         if (result.status === Office.AsyncResultStatus.Failed) {
             showStatus("Could not save: " + result.error.message, true);
         }
