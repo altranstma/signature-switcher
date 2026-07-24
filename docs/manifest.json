@@ -147,7 +147,8 @@
                 "name": "Mailbox",
                 "minVersion": "1.13"
               }
-            ]
+            ],
+            "scopes": ["mail"]
           },
           "events": [
             {
