@@ -34,9 +34,8 @@ function applyForCurrentAddress(event) {
         const signatureMap = getSignatureMap();
         console.log(LOG_PREFIX, "address =", address, "signatureMap keys =", Object.keys(signatureMap));
         const entry = signatureMap[address];
-        // Builder-mode entries store only `fields` (see taskpane.js onSave), so
-        // render via the shared helper rather than reading entry.html directly.
-        const configuredSignature = resolveSignatureHtml(entry);
+        // Entries are {mode, html, fields?} objects; tolerate a legacy plain-string entry too.
+        const configuredSignature = entry && (typeof entry === "string" ? entry : entry.html);
         console.log(LOG_PREFIX, "configuredSignature found?", !!configuredSignature, "length =", configuredSignature ? configuredSignature.length : 0);
 
         item.loadCustomPropertiesAsync((propsResult) => {
