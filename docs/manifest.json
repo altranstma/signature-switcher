@@ -1,7 +1,7 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/teams/vDevPreview/MicrosoftTeams.schema.json",
   "id": "61bcae55-9f55-452b-88a5-612a7a108623",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "manifestVersion": "devPreview",
   "name": {
     "short": "Signature Switcher",
