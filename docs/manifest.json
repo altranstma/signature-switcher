@@ -1,7 +1,7 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/teams/vDevPreview/MicrosoftTeams.schema.json",
   "id": "61bcae55-9f55-452b-88a5-612a7a108623",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "manifestVersion": "devPreview",
   "name": {
     "short": "Signature Switcher",
@@ -147,8 +147,7 @@
                 "name": "Mailbox",
                 "minVersion": "1.13"
               }
-            ],
-            "scopes": ["mail"]
+            ]
           },
           "events": [
             {
