@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0" xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.0" xsi:type="MailApp">
+  <Id>61bcae55-9f55-452b-88a5-612a7a108623</Id>
+  <Version>1.0.3.0</Version>
+  <ProviderName>ALTRANS</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="Signature Switcher"/>
+  <Description DefaultValue="Automatically applies the right signature when you send from a personal alias or a shared mailbox you have send-as/send-on-behalf-of permission for."/>
+  <IconUrl DefaultValue="https://altranstma.github.io/signature-switcher/assets/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://altranstma.github.io/signature-switcher/assets/color.png"/>
+  <SupportUrl DefaultValue="https://www.altrans.net"/>
+  <AppDomains>
+    <AppDomain>https://altranstma.github.io</AppDomain>
+  </AppDomains>
+  <Hosts>
+    <Host Name="Mailbox"/>
+  </Hosts>
+  <Requirements>
+    <Sets>
+      <Set Name="Mailbox" MinVersion="1.1"/>
+    </Sets>
+  </Requirements>
+  <FormSettings>
+    <Form xsi:type="ItemRead">
+      <DesktopSettings>
+        <SourceLocation DefaultValue="https://altranstma.github.io/signature-switcher/taskpane.html"/>
+        <RequestedHeight>250</RequestedHeight>
+      </DesktopSettings>
+    </Form>
+  </FormSettings>
+  <Permissions>ReadWriteItem</Permissions>
+  <Rule xsi:type="RuleCollection" Mode="Or">
+    <Rule xsi:type="ItemIs" ItemType="Message" FormType="Edit"/>
+  </Rule>
+  <DisableEntityHighlighting>true</DisableEntityHighlighting>
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides/1.1" xsi:type="VersionOverridesV1_1">
+      <Requirements>
+        <bt:Sets DefaultMinVersion="1.13">
+          <bt:Set Name="Mailbox" />
+        </bt:Sets>
+      </Requirements>
+      <Hosts>
+        <Host xsi:type="MailHost">
+          <!-- Event-based activation happens in a lightweight runtime.-->
+          <!-- For more information, see https://learn.microsoft.com/office/dev/add-ins/outlook/autolaunch -->
+          <Runtimes>
+            <!-- HTML file including reference to or inline JavaScript event handlers.
+                This is used by Outlook on the web and on Mac, and in new Outlook on Windows. -->
+            <Runtime resid="WebViewRuntime.Url">
+              <!-- JavaScript file containing event handlers. This is used by classic Outlook on Windows. -->
+              <Override type="javascript" resid="JSRuntime.Url"/>
+            </Runtime>
+          </Runtimes>
+          <DesktopFormFactor>
+            <FunctionFile resid="Commands.Url" />
+            <ExtensionPoint xsi:type="MessageComposeCommandSurface">
+              <OfficeTab id="TabDefault">
+                <Group id="sigSwitcherGroup">
+                  <Label resid="GroupLabel" />
+                  <Control xsi:type="Button" id="openSignatureManagerButton">
+                    <Label resid="TaskpaneButton.Label" />
+                    <Supertip>
+                      <Title resid="TaskpaneButton.Label" />
+                      <Description resid="TaskpaneButton.Tooltip" />
+                    </Supertip>
+                    <Icon>
+                      <bt:Image size="16" resid="Icon.16x16" />
+                      <bt:Image size="32" resid="Icon.32x32" />
+                      <bt:Image size="80" resid="Icon.80x80" />
+                    </Icon>
+                    <Action xsi:type="ShowTaskpane">
+                      <SourceLocation resid="Taskpane.Url" />
+                    </Action>
+                  </Control>
+                </Group>
+              </OfficeTab>
+            </ExtensionPoint>
+            <!-- Enable launching the add-in on the included events. -->
+            <ExtensionPoint xsi:type="LaunchEvent">
+              <LaunchEvents>
+                <LaunchEvent Type="OnNewMessageCompose" FunctionName="onNewMessageComposeHandler" />
+                <LaunchEvent Type="OnMessageFromChanged" FunctionName="onMessageFromChangedHandler" />
+              </LaunchEvents>
+              <!-- Identifies the runtime to be used (also referenced by the Runtime element). -->
+              <SourceLocation resid="WebViewRuntime.Url"/>
+            </ExtensionPoint>
+          </DesktopFormFactor>
+        </Host>
+      </Hosts>
+      <Resources>
+        <bt:Images>
+          <bt:Image id="Icon.16x16" DefaultValue="https://altranstma.github.io/signature-switcher/assets/icon-16.png"/>
+          <bt:Image id="Icon.32x32" DefaultValue="https://altranstma.github.io/signature-switcher/assets/icon-32.png"/>
+          <bt:Image id="Icon.80x80" DefaultValue="https://altranstma.github.io/signature-switcher/assets/icon-80.png"/>
+        </bt:Images>
+        <bt:Urls>
+          <bt:Url id="Commands.Url" DefaultValue="https://altranstma.github.io/signature-switcher/launchevent.html" />
+          <bt:Url id="Taskpane.Url" DefaultValue="https://altranstma.github.io/signature-switcher/taskpane.html" />
+          <bt:Url id="WebViewRuntime.Url" DefaultValue="https://altranstma.github.io/signature-switcher/launchevent.html" />
+          <!-- Entry needed for classic Outlook on Windows. -->
+          <bt:Url id="JSRuntime.Url" DefaultValue="https://altranstma.github.io/signature-switcher/launchevent.js" />
+        </bt:Urls>
+        <bt:ShortStrings>
+          <bt:String id="GroupLabel" DefaultValue="Signatures"/>
+          <bt:String id="TaskpaneButton.Label" DefaultValue="Manage Signatures"/>
+        </bt:ShortStrings>
+        <bt:LongStrings>
+          <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Add, edit, or remove your signature for each alias or shared mailbox you send from."/>
+        </bt:LongStrings>
+      </Resources>
+    </VersionOverrides>
+  </VersionOverrides>
+</OfficeApp>
