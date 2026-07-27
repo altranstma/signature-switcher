@@ -101,6 +101,15 @@ function onMessageFromChangedHandler(event) {
     applyForCurrentAddress(event);
 }
 
+// The browser runtime (OWA, new Outlook, Mac) needs Office.onReady() called to
+// complete its own internal bootstrap; without it, Office.js's internal "wait
+// for host ready" poll times out and throws internally ("Office.js has not
+// fully loaded..."), silently aborting before it ever invokes our associated
+// handlers below, even though Office.actions.associate itself already
+// succeeded earlier in this script. Classic Outlook's JS-only runtime doesn't
+// run this callback at all (by design), so this is harmless there either way.
+Office.onReady();
+
 // Maps the manifest's runtime action ids to these handlers. Required in both
 // the classic-Windows JS-only runtime and the browser runtime.
 Office.actions.associate("onNewMessageComposeHandler", onNewMessageComposeHandler);
