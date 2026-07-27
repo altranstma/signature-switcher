@@ -250,17 +250,56 @@ function wireUpUi() {
     document.getElementById("saveBtn").addEventListener("click", onSave);
     document.getElementById("cancelBtn").addEventListener("click", resetEditor);
 
+    let savedSelectionRange = null;
+
     document.querySelectorAll(".toolbar button").forEach((btn) => {
         btn.addEventListener("click", () => {
             const cmd = btn.getAttribute("data-cmd");
             document.getElementById("signatureEditor").focus();
             if (cmd === "createLink") {
-                const url = window.prompt("Link URL:", "https://");
-                if (url) document.execCommand(cmd, false, url);
+                // window.prompt() is silently suppressed in some Office Add-in
+                // task pane hosts, so use an inline input instead of a native
+                // dialog. Save the selection first since focusing the input
+                // below would otherwise collapse it.
+                const selection = window.getSelection();
+                savedSelectionRange = selection.rangeCount ? selection.getRangeAt(0) : null;
+                document.getElementById("linkUrlInput").value = "https://";
+                document.getElementById("linkUrlRow").classList.remove("hidden");
+                document.getElementById("linkUrlInput").focus();
+                document.getElementById("linkUrlInput").select();
             } else {
                 document.execCommand(cmd, false, null);
             }
         });
+    });
+
+    function closeLinkUrlRow() {
+        document.getElementById("linkUrlRow").classList.add("hidden");
+        savedSelectionRange = null;
+    }
+
+    document.getElementById("linkUrlInsertBtn").addEventListener("click", () => {
+        const url = document.getElementById("linkUrlInput").value.trim();
+        if (url) {
+            const editor = document.getElementById("signatureEditor");
+            editor.focus();
+            const selection = window.getSelection();
+            if (savedSelectionRange) {
+                selection.removeAllRanges();
+                selection.addRange(savedSelectionRange);
+            }
+            document.execCommand("createLink", false, url);
+        }
+        closeLinkUrlRow();
+    });
+    document.getElementById("linkUrlCancelBtn").addEventListener("click", closeLinkUrlRow);
+    document.getElementById("linkUrlInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            document.getElementById("linkUrlInsertBtn").click();
+        } else if (e.key === "Escape") {
+            closeLinkUrlRow();
+        }
     });
 }
 
@@ -331,7 +370,7 @@ function renderSignatureList() {
         delBtn.type = "button";
         delBtn.className = "link-btn danger";
         delBtn.textContent = "Delete";
-        delBtn.addEventListener("click", () => onDelete(address));
+        delBtn.addEventListener("click", () => onDelete(address, delBtn));
         actions.appendChild(delBtn);
 
         li.appendChild(actions);
@@ -408,10 +447,23 @@ function onSave() {
     });
 }
 
-function onDelete(address) {
-    if (!window.confirm("Delete the signature for " + address + "?")) {
+// window.confirm() is silently suppressed in some Office Add-in task pane
+// hosts (notably OWA's), so a native confirm dialog never appears and the
+// delete just looks broken. Require a second click within a few seconds
+// instead of a native dialog.
+function onDelete(address, btnEl) {
+    if (btnEl.dataset.confirming !== "1") {
+        btnEl.dataset.confirming = "1";
+        const originalLabel = btnEl.textContent;
+        btnEl.textContent = "Confirm delete?";
+        btnEl.dataset.resetTimer = setTimeout(() => {
+            btnEl.dataset.confirming = "0";
+            btnEl.textContent = originalLabel;
+        }, 4000);
         return;
     }
+
+    clearTimeout(Number(btnEl.dataset.resetTimer));
     const map = getSignatureMap();
     delete map[address.toLowerCase()];
     saveSignatureMap(map, () => {

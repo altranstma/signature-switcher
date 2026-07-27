@@ -246,6 +246,21 @@ h2 {
     background: #eef2f8;
 }
 
+.link-url-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.link-url-row input {
+    flex: 1;
+    padding: 4px 6px;
+    font-size: 12px;
+    border: 1px solid #c7c7c7;
+    border-radius: 4px;
+}
+
 .signature-editor {
     min-height: 120px;
     border: 1px solid #c7c7c7;
