@@ -74,6 +74,9 @@
                 <div id="socialLinksList" class="social-links-list"></div>
                 <button type="button" id="addSocialLinkBtn" class="link-btn">+ Add social link</button>
 
+                <label class="field-label" for="f_socialIconSize">Social icon size (px)</label>
+                <input id="f_socialIconSize" type="number" min="12" max="48" step="2" value="24" />
+
                 <label class="field-label" for="f_taglineText">Tagline (optional)</label>
                 <input id="f_taglineText" type="text" placeholder="Have you heard? Click to receive updates." autocomplete="off" />
                 <label class="field-label" for="f_taglineUrl">Tagline link (optional)</label>
@@ -81,6 +84,10 @@
 
                 <label class="field-label">Preview</label>
                 <div id="builderPreview" class="builder-preview"></div>
+                <button type="button" id="editAsCustomBtn" class="link-btn">Fine-tune as Custom HTML &rarr;</button>
+                <p class="hint">Switches to the Custom HTML tab with this signature's current HTML, so you can
+                    manually adjust things the template doesn't cover (like line breaks). This is one-way —
+                    edits made after switching won't flow back into these fields.</p>
             </div>
 
             <div id="customPane" class="hidden">
@@ -91,6 +98,7 @@
                     <button type="button" data-cmd="underline" title="Underline"><u>U</u></button>
                     <button type="button" data-cmd="createLink" title="Insert link">Link</button>
                     <button type="button" data-cmd="unlink" title="Remove link">Unlink</button>
+                    <button type="button" data-cmd="insertLineBreak" title="Line break (or press Shift+Enter in the editor)">Line break</button>
                     <button type="button" data-cmd="removeFormat" title="Clear formatting">Clear</button>
                 </div>
                 <div id="linkUrlRow" class="link-url-row hidden">

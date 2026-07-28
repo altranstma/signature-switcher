@@ -212,6 +212,12 @@ h2 {
     white-space: nowrap;
 }
 
+.social-move {
+    flex: 0 0 auto;
+    padding: 0 3px;
+    font-size: 11px;
+}
+
 .builder-preview {
     border: 1px dashed #c7c7c7;
     border-radius: 4px;

@@ -2,6 +2,7 @@
 
 const SIGNATURE_MAP_KEY = "signatureMap";
 const SOCIAL_ICON_BASE = "https://altranstma.github.io/signature-switcher/assets/social";
+const DEFAULT_SOCIAL_ICON_SIZE = 24;
 const SOCIAL_PLATFORMS = {
     instagram: { label: "Instagram", icon: `${SOCIAL_ICON_BASE}/instagram.png` },
     facebook: { label: "Facebook", icon: `${SOCIAL_ICON_BASE}/facebook.png` },
@@ -70,30 +71,31 @@ function buildSignatureHtml(fields) {
 
     const titleCompany = [fields.title, fields.company].filter(Boolean).join(", ");
 
+    const iconSize = fields.socialIconSize || DEFAULT_SOCIAL_ICON_SIZE;
     const socialImgs = (fields.socialLinks || [])
         .filter(s => s.url)
         .map(s => {
             const icon = s.platform === "custom" ? sanitizeHttpUrl(s.customIconUrl) : (SOCIAL_PLATFORMS[s.platform] || {}).icon;
             const linkUrl = sanitizeHttpUrl(s.url);
             if (!icon || !linkUrl) return "";
-            return `<a href="${linkUrl}" style="text-decoration:none;margin-right:6px;"><img src="${icon}" width="20" height="20" style="border:0;vertical-align:middle;" alt="" /></a>`;
+            return `<a href="${linkUrl}" style="text-decoration:none;margin-right:10px;"><img src="${icon}" width="${iconSize}" height="${iconSize}" style="border:0;vertical-align:middle;" alt="" /></a>`;
         })
         .join("");
 
     let html = `<table cellpadding="0" cellspacing="0" style="font-family:Arial,Helvetica,sans-serif;border-collapse:collapse;"><tr>`;
     html += logoCell;
     html += `<td style="${fields.logoUrl ? "border-left:2px solid #cccccc;padding-left:14px;" : ""}vertical-align:middle;">`;
-    if (fields.name) html += `<div style="font-size:14px;font-weight:bold;color:#222222;">${escapeHtml(fields.name)}</div>`;
-    if (titleCompany) html += `<div style="font-size:12px;font-weight:bold;color:#666666;">${escapeHtml(titleCompany)}</div>`;
-    if (contactLine) html += `<div style="font-size:12px;color:#333333;margin-top:3px;">${contactLine}</div>`;
-    if (socialImgs) html += `<div style="margin-top:6px;">${socialImgs}</div>`;
+    if (fields.name) html += `<div style="font-size:12pt;font-weight:bold;color:#222222;">${escapeHtml(fields.name)}</div>`;
+    if (titleCompany) html += `<div style="font-size:11pt;font-weight:bold;color:#666666;">${escapeHtml(titleCompany)}</div>`;
+    if (contactLine) html += `<div style="font-size:11pt;color:#333333;margin-top:3px;">${contactLine}</div>`;
+    if (socialImgs) html += `<div style="margin-top:8px;">${socialImgs}</div>`;
     html += `</td></tr>`;
     if (fields.tagline && fields.tagline.text) {
         const taglineUrl = sanitizeHttpUrl(fields.tagline.url);
         const taglineContent = taglineUrl
             ? `<a href="${taglineUrl}" style="color:#1155cc;text-decoration:underline;">${escapeHtml(fields.tagline.text)}</a>`
             : escapeHtml(fields.tagline.text);
-        html += `<tr><td colspan="2" style="padding-top:8px;font-size:11px;color:#555555;">${taglineContent}</td></tr>`;
+        html += `<tr><td colspan="2" style="padding-top:8px;font-size:11pt;color:#555555;">${taglineContent}</td></tr>`;
     }
     html += `</table>`;
     return html;
@@ -109,6 +111,7 @@ function collectBuilderFields() {
         phone: document.getElementById("f_phone").value.trim(),
         website: document.getElementById("f_website").value.trim(),
         socialLinks: collectSocialLinks(),
+        socialIconSize: parseInt(document.getElementById("f_socialIconSize").value, 10) || DEFAULT_SOCIAL_ICON_SIZE,
         tagline: {
             text: document.getElementById("f_taglineText").value.trim(),
             url: document.getElementById("f_taglineUrl").value.trim()
@@ -124,6 +127,7 @@ function populateBuilderFields(fields) {
     document.getElementById("f_email").value = fields.email || "";
     document.getElementById("f_phone").value = fields.phone || "";
     document.getElementById("f_website").value = fields.website || "";
+    document.getElementById("f_socialIconSize").value = fields.socialIconSize || DEFAULT_SOCIAL_ICON_SIZE;
     document.getElementById("f_taglineText").value = (fields.tagline || {}).text || "";
     document.getElementById("f_taglineUrl").value = (fields.tagline || {}).url || "";
 
@@ -175,6 +179,21 @@ function addSocialLinkRow(existing) {
     customIconInput.value = entry.customIconUrl || "";
     customIconInput.style.display = entry.platform === "custom" ? "" : "none";
 
+    // Order is whatever order the rows sit in the DOM — collectSocialLinks()
+    // reads them in that order, so moving a row is enough to reorder; no
+    // separate index needs to be tracked or persisted.
+    const moveUpBtn = document.createElement("button");
+    moveUpBtn.type = "button";
+    moveUpBtn.className = "link-btn social-move";
+    moveUpBtn.textContent = "▲";
+    moveUpBtn.title = "Move up";
+
+    const moveDownBtn = document.createElement("button");
+    moveDownBtn.type = "button";
+    moveDownBtn.className = "link-btn social-move";
+    moveDownBtn.textContent = "▼";
+    moveDownBtn.title = "Move down";
+
     const removeBtn = document.createElement("button");
     removeBtn.type = "button";
     removeBtn.className = "link-btn danger social-remove";
@@ -186,6 +205,20 @@ function addSocialLinkRow(existing) {
     });
     urlInput.addEventListener("input", updateBuilderPreview);
     customIconInput.addEventListener("input", updateBuilderPreview);
+    moveUpBtn.addEventListener("click", () => {
+        const prev = row.previousElementSibling;
+        if (prev) {
+            row.parentNode.insertBefore(row, prev);
+            updateBuilderPreview();
+        }
+    });
+    moveDownBtn.addEventListener("click", () => {
+        const next = row.nextElementSibling;
+        if (next) {
+            row.parentNode.insertBefore(next, row);
+            updateBuilderPreview();
+        }
+    });
     removeBtn.addEventListener("click", () => {
         row.remove();
         socialLinks = socialLinks.filter(s => s.id !== id);
@@ -195,6 +228,8 @@ function addSocialLinkRow(existing) {
     row.appendChild(select);
     row.appendChild(urlInput);
     row.appendChild(customIconInput);
+    row.appendChild(moveUpBtn);
+    row.appendChild(moveDownBtn);
     row.appendChild(removeBtn);
     document.getElementById("socialLinksList").appendChild(row);
     updateBuilderPreview();
@@ -237,7 +272,7 @@ function wireUpUi() {
     document.getElementById("customTab").addEventListener("click", () => setMode("custom"));
     document.getElementById("addSocialLinkBtn").addEventListener("click", () => addSocialLinkRow());
 
-    ["f_logoUrl", "f_name", "f_title", "f_company", "f_email", "f_phone", "f_website", "f_taglineText", "f_taglineUrl"]
+    ["f_logoUrl", "f_name", "f_title", "f_company", "f_email", "f_phone", "f_website", "f_socialIconSize", "f_taglineText", "f_taglineUrl"]
         .forEach(id => document.getElementById(id).addEventListener("input", updateBuilderPreview));
 
     document.getElementById("useCurrentBtn").addEventListener("click", () => {
@@ -249,6 +284,11 @@ function wireUpUi() {
 
     document.getElementById("saveBtn").addEventListener("click", onSave);
     document.getElementById("cancelBtn").addEventListener("click", resetEditor);
+
+    document.getElementById("editAsCustomBtn").addEventListener("click", () => {
+        document.getElementById("signatureEditor").innerHTML = buildSignatureHtml(collectBuilderFields());
+        setMode("custom");
+    });
 
     let savedSelectionRange = null;
 
