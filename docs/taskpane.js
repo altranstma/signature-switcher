@@ -15,38 +15,13 @@ const SOCIAL_PLATFORMS = {
 let editingAddress = null; // null = adding new; otherwise the original key being edited
 let socialLinks = []; // working list of {id, platform, url, customIconUrl} while editing
 
-// ---------- Dialog-to-parent bridge ----------
-// This page always runs inside a Dialog API popup, which has no direct access
-// to Office.context.mailbox/roamingSettings. The actual compose-window
-// context (docs/launchevent.js) does the real work and replies over
-// messageChild/messageParent; callParent() turns that into a promise.
-let rpcSeq = 0;
-const pendingRpc = new Map();
-
-function callParent(action, payload) {
-    return new Promise((resolve) => {
-        const id = ++rpcSeq;
-        pendingRpc.set(id, resolve);
-        Office.context.ui.messageParent(JSON.stringify({ id, action, payload }));
-    });
-}
-
 Office.onReady(() => {
-    Office.context.ui.addHandlerAsync(Office.EventType.DialogParentMessageReceived, (arg) => {
-        const msg = JSON.parse(arg.message);
-        const resolve = pendingRpc.get(msg.id);
-        if (resolve) {
-            pendingRpc.delete(msg.id);
-            resolve(msg.result);
-        }
-    });
-
     document.getElementById("app").classList.remove("hidden");
+    detectCurrentAddress();
+    renderSignatureList();
     wireUpUi();
     addSocialLinkRow(); // start with one empty row
     updateBuilderPreview();
-    detectCurrentAddress();
-    renderSignatureList();
 });
 
 // ---------- Utilities ----------
@@ -368,26 +343,39 @@ function wireUpUi() {
     });
 }
 
-async function detectCurrentAddress() {
-    const address = await callParent("getCurrentAddress");
-    document.getElementById("currentAddress").textContent = address || "(not available)";
+function detectCurrentAddress() {
+    const item = Office.context.mailbox.item;
+    if (!item || !item.from) {
+        document.getElementById("currentAddress").textContent = "(not available)";
+        return;
+    }
+    item.from.getAsync((result) => {
+        const el = document.getElementById("currentAddress");
+        if (result.status === Office.AsyncResultStatus.Succeeded && result.value && result.value.emailAddress) {
+            el.textContent = result.value.emailAddress;
+        } else {
+            el.textContent = "(not available)";
+        }
+    });
 }
 
-async function getSignatureMap() {
-    const map = await callParent("getSignatureMap");
+function getSignatureMap() {
+    const map = Office.context.roamingSettings.get(SIGNATURE_MAP_KEY);
     return map && typeof map === "object" ? map : {};
 }
 
-async function saveSignatureMap(map, onDone) {
-    const result = await callParent("saveSignatureMap", map);
-    if (result && result.error) {
-        showStatus("Could not save: " + result.error, true);
-    }
-    if (onDone) onDone();
+function saveSignatureMap(map, onDone) {
+    Office.context.roamingSettings.set(SIGNATURE_MAP_KEY, map);
+    Office.context.roamingSettings.saveAsync((result) => {
+        if (result.status === Office.AsyncResultStatus.Failed) {
+            showStatus("Could not save: " + result.error.message, true);
+        }
+        if (onDone) onDone();
+    });
 }
 
-async function renderSignatureList() {
-    const map = await getSignatureMap();
+function renderSignatureList() {
+    const map = getSignatureMap();
     const addresses = Object.keys(map).sort();
     const list = document.getElementById("signatureList");
     const emptyState = document.getElementById("emptyState");
@@ -430,8 +418,8 @@ async function renderSignatureList() {
     });
 }
 
-async function loadAddressIntoEditor(address) {
-    const map = await getSignatureMap();
+function loadAddressIntoEditor(address) {
+    const map = getSignatureMap();
     const entry = map[address.toLowerCase()];
     editingAddress = address.toLowerCase();
     document.getElementById("addressInput").value = address;
@@ -461,7 +449,7 @@ function resetEditor() {
     setMode("builder");
 }
 
-async function onSave() {
+function onSave() {
     const address = document.getElementById("addressInput").value.trim().toLowerCase();
     if (!address || address.indexOf("@") === -1) {
         showStatus("Enter a valid email address.", true);
@@ -486,7 +474,7 @@ async function onSave() {
         entry = { mode: "builder", fields, html: buildSignatureHtml(fields) };
     }
 
-    const map = await getSignatureMap();
+    const map = getSignatureMap();
     if (editingAddress && editingAddress !== address) {
         delete map[editingAddress];
     }
@@ -503,7 +491,7 @@ async function onSave() {
 // hosts (notably OWA's), so a native confirm dialog never appears and the
 // delete just looks broken. Require a second click within a few seconds
 // instead of a native dialog.
-async function onDelete(address, btnEl) {
+function onDelete(address, btnEl) {
     if (btnEl.dataset.confirming !== "1") {
         btnEl.dataset.confirming = "1";
         const originalLabel = btnEl.textContent;
@@ -516,7 +504,7 @@ async function onDelete(address, btnEl) {
     }
 
     clearTimeout(Number(btnEl.dataset.resetTimer));
-    const map = await getSignatureMap();
+    const map = getSignatureMap();
     delete map[address.toLowerCase()];
     saveSignatureMap(map, () => {
         showStatus("Deleted signature for " + address + ".", false);
