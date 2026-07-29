@@ -101,6 +101,82 @@ function onMessageFromChangedHandler(event) {
     applyForCurrentAddress(event);
 }
 
+// ---------- Manage Signatures dialog bridge ----------
+// The Manage Signatures UI opens as a real popup window via the Dialog API
+// instead of a docked task pane. Dialog windows are sandboxed away from
+// Office.context.mailbox/roamingSettings entirely (by Microsoft's own design,
+// not a bug), so the dialog can only talk to this already-privileged
+// FunctionFile context via postMessage-style messageParent/messageChild
+// calls, and this code performs the actual mailbox/roamingSettings work on
+// its behalf.
+let activeDialog = null;
+
+function openManageSignaturesHandler(event) {
+    Office.context.ui.displayDialogAsync(
+        "https://altranstma.github.io/signature-switcher/taskpane.html",
+        { height: 80, width: 60, displayInIframe: false },
+        (asyncResult) => {
+            if (asyncResult.status === Office.AsyncResultStatus.Failed) {
+                console.log(LOG_PREFIX, "displayDialogAsync failed:", asyncResult.error.message);
+                event.completed();
+                return;
+            }
+            activeDialog = asyncResult.value;
+            activeDialog.addEventHandler(Office.EventType.DialogMessageReceived, onDialogMessage);
+            activeDialog.addEventHandler(Office.EventType.DialogEventReceived, onDialogClosedOrError);
+            event.completed();
+        }
+    );
+}
+
+function onDialogClosedOrError(arg) {
+    console.log(LOG_PREFIX, "Manage Signatures dialog closed, code:", arg.error);
+    activeDialog = null;
+}
+
+function sendDialogResult(id, result) {
+    if (activeDialog) {
+        activeDialog.messageChild(JSON.stringify({ id, result }));
+    }
+}
+
+function onDialogMessage(arg) {
+    const msg = JSON.parse(arg.message);
+
+    if (msg.action === "getSignatureMap") {
+        sendDialogResult(msg.id, getSignatureMap());
+        return;
+    }
+
+    if (msg.action === "saveSignatureMap") {
+        Office.context.roamingSettings.set(SIGNATURE_MAP_KEY, msg.payload);
+        Office.context.roamingSettings.saveAsync((result) => {
+            sendDialogResult(msg.id, {
+                ok: result.status !== Office.AsyncResultStatus.Failed,
+                error: result.error ? result.error.message : null
+            });
+        });
+        return;
+    }
+
+    if (msg.action === "getCurrentAddress") {
+        const item = Office.context.mailbox.item;
+        if (!item || !item.from) {
+            sendDialogResult(msg.id, null);
+            return;
+        }
+        item.from.getAsync((result) => {
+            const address = result.status === Office.AsyncResultStatus.Succeeded && result.value
+                ? result.value.emailAddress
+                : null;
+            sendDialogResult(msg.id, address);
+        });
+        return;
+    }
+
+    console.log(LOG_PREFIX, "Unknown dialog action:", msg.action);
+}
+
 // The browser runtime (OWA, new Outlook, Mac) needs Office.onReady() called to
 // complete its own internal bootstrap; without it, Office.js's internal "wait
 // for host ready" poll times out and throws internally ("Office.js has not
@@ -114,3 +190,4 @@ Office.onReady();
 // the classic-Windows JS-only runtime and the browser runtime.
 Office.actions.associate("onNewMessageComposeHandler", onNewMessageComposeHandler);
 Office.actions.associate("onMessageFromChangedHandler", onMessageFromChangedHandler);
+Office.actions.associate("openManageSignaturesHandler", openManageSignaturesHandler);
