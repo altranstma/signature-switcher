@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0" xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.0" xsi:type="MailApp">
   <Id>61bcae55-9f55-452b-88a5-612a7a108623</Id>
-  <Version>1.0.3.0</Version>
+  <Version>1.0.4.0</Version>
   <ProviderName>ALTRANS</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Signature Switcher"/>
@@ -69,8 +69,8 @@
                       <bt:Image size="32" resid="Icon.32x32" />
                       <bt:Image size="80" resid="Icon.80x80" />
                     </Icon>
-                    <Action xsi:type="ShowTaskpane">
-                      <SourceLocation resid="Taskpane.Url" />
+                    <Action xsi:type="ExecuteFunction">
+                      <FunctionName>openManageSignaturesHandler</FunctionName>
                     </Action>
                   </Control>
                 </Group>
