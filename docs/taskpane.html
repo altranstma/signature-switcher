@@ -39,37 +39,50 @@
             </div>
 
             <div id="builderPane">
-                <label class="field-label">Include in signature</label>
-                <div class="toggle-grid">
-                    <label class="toggle-item"><input type="checkbox" id="tg_logo" /> Logo</label>
-                    <label class="toggle-item"><input type="checkbox" id="tg_name" /> Name</label>
-                    <label class="toggle-item"><input type="checkbox" id="tg_titleCompany" /> Title / Company</label>
-                    <label class="toggle-item"><input type="checkbox" id="tg_email" /> Email</label>
-                    <label class="toggle-item"><input type="checkbox" id="tg_phone" /> Phone</label>
-                    <label class="toggle-item"><input type="checkbox" id="tg_website" /> Website</label>
-                    <label class="toggle-item"><input type="checkbox" id="tg_social" /> Social links</label>
-                    <label class="toggle-item"><input type="checkbox" id="tg_tagline" /> Tagline</label>
+                <label class="field-label" for="f_logoUrl">Logo image URL</label>
+                <input id="f_logoUrl" type="text" placeholder="https://example.com/logo.png" autocomplete="off" />
+
+                <label class="field-label" for="f_name">Full name</label>
+                <input id="f_name" type="text" placeholder="Daniel Oliver" autocomplete="off" />
+
+                <div class="field-row">
+                    <div>
+                        <label class="field-label" for="f_title">Title</label>
+                        <input id="f_title" type="text" placeholder="Executive Director" autocomplete="off" />
+                    </div>
+                    <div>
+                        <label class="field-label" for="f_company">Company</label>
+                        <input id="f_company" type="text" placeholder="Emeryville TMA" autocomplete="off" />
+                    </div>
                 </div>
 
-                <div id="logoUrlRow" class="conditional-field hidden">
-                    <label class="field-label" for="f_logoUrl">Logo image URL</label>
-                    <input id="f_logoUrl" type="text" placeholder="https://example.com/logo.png" autocomplete="off" />
+                <div class="field-row">
+                    <div>
+                        <label class="field-label" for="f_email">Email</label>
+                        <input id="f_email" type="text" placeholder="admin@example.com" autocomplete="off" />
+                    </div>
+                    <div>
+                        <label class="field-label" for="f_phone">Phone</label>
+                        <input id="f_phone" type="text" placeholder="408-258-7267, 503" autocomplete="off" />
+                    </div>
                 </div>
 
-                <div id="socialLinksSection" class="conditional-field hidden">
-                    <label class="field-label">Social links</label>
-                    <div id="socialLinksList" class="social-links-list"></div>
-                    <button type="button" id="addSocialLinkBtn" class="link-btn">+ Add social link</button>
-                    <label class="field-label" for="f_socialIconSize">Social icon size (px)</label>
-                    <input id="f_socialIconSize" type="number" min="12" max="48" step="2" value="24" />
-                </div>
+                <label class="field-label" for="f_website">Website (optional, shown instead of/with email)</label>
+                <input id="f_website" type="text" placeholder="https://altrans.net" autocomplete="off" />
 
-                <div id="taglineUrlRow" class="conditional-field hidden">
-                    <label class="field-label" for="f_taglineUrl">Tagline link (optional)</label>
-                    <input id="f_taglineUrl" type="text" placeholder="https://example.com/updates" autocomplete="off" />
-                </div>
+                <label class="field-label">Social links</label>
+                <div id="socialLinksList" class="social-links-list"></div>
+                <button type="button" id="addSocialLinkBtn" class="link-btn">+ Add social link</button>
 
-                <label class="field-label">Preview (click any text to edit it)</label>
+                <label class="field-label" for="f_socialIconSize">Social icon size (px)</label>
+                <input id="f_socialIconSize" type="number" min="12" max="48" step="2" value="24" />
+
+                <label class="field-label" for="f_taglineText">Tagline (optional)</label>
+                <input id="f_taglineText" type="text" placeholder="Have you heard? Click to receive updates." autocomplete="off" />
+                <label class="field-label" for="f_taglineUrl">Tagline link (optional)</label>
+                <input id="f_taglineUrl" type="text" placeholder="https://example.com/updates" autocomplete="off" />
+
+                <label class="field-label">Preview</label>
                 <div id="builderPreview" class="builder-preview"></div>
                 <button type="button" id="editAsCustomBtn" class="link-btn">Fine-tune as Custom HTML &rarr;</button>
                 <p class="hint">Switches to the Custom HTML tab with this signature's current HTML, so you can

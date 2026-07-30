@@ -12,45 +12,16 @@ const SOCIAL_PLATFORMS = {
     custom: { label: "Custom", icon: null }
 };
 
-// Fields the user can toggle on/off in the builder. Each maps to a checkbox
-// (id "tg_" + key) and, when on, a directly-editable region in the live
-// preview (see buildEditablePreviewHtml/wireEditableFields). "social" is the
-// one exception — it reveals the existing repeatable list UI instead of a
-// single editable span, since a social link is inherently structured
-// (platform + URL), not plain text.
-const TOGGLE_FIELDS = ["logo", "name", "titleCompany", "email", "phone", "website", "social", "tagline"];
-
-const FIELD_PLACEHOLDERS = {
-    name: "Your Name",
-    titleCompany: "Title, Company",
-    email: "you@company.com",
-    phone: "555-123-4567",
-    website: "yourwebsite.com",
-    tagline: "Your tagline here"
-};
-
 let editingAddress = null; // null = adding new; otherwise the original key being edited
 let socialLinks = []; // working list of {id, platform, url, customIconUrl} while editing
-let enabledFields = new Set(); // which of TOGGLE_FIELDS are currently checked
-
-// Current text for each editable preview field, kept in sync with the DOM on
-// blur (and flushed from the DOM before any rebuild) so a rebuild never loses
-// what's currently displayed, even mid-edit.
-let builderState = {
-    name: "",
-    titleCompany: "",
-    email: "",
-    phone: "",
-    website: "",
-    tagline: ""
-};
 
 Office.onReady(() => {
     document.getElementById("app").classList.remove("hidden");
-    wireUpUi();
-    resetEditor();
     detectCurrentAddress();
     renderSignatureList();
+    wireUpUi();
+    addSocialLinkRow(); // start with one empty row
+    updateBuilderPreview();
 });
 
 // ---------- Utilities ----------
@@ -76,19 +47,7 @@ function sanitizePhoneForTel(phone) {
     return String(phone || "").replace(/[^\d+]/g, "");
 }
 
-// ---------- Signature HTML builder (canonical output used for saving) ----------
-
-function renderSocialIconsHtml(links, iconSize) {
-    return (links || [])
-        .filter(s => s.url)
-        .map(s => {
-            const icon = s.platform === "custom" ? sanitizeHttpUrl(s.customIconUrl) : (SOCIAL_PLATFORMS[s.platform] || {}).icon;
-            const linkUrl = sanitizeHttpUrl(s.url);
-            if (!icon || !linkUrl) return "";
-            return `<a href="${linkUrl}" style="text-decoration:none;margin-right:10px;"><img src="${icon}" width="${iconSize}" height="${iconSize}" style="border:0;vertical-align:middle;" alt="" /></a>`;
-        })
-        .join("");
-}
+// ---------- Signature HTML builder ----------
 
 function buildSignatureHtml(fields) {
     const logoCell = fields.logoUrl
@@ -113,7 +72,15 @@ function buildSignatureHtml(fields) {
     const titleCompany = [fields.title, fields.company].filter(Boolean).join(", ");
 
     const iconSize = fields.socialIconSize || DEFAULT_SOCIAL_ICON_SIZE;
-    const socialImgs = renderSocialIconsHtml(fields.socialLinks, iconSize);
+    const socialImgs = (fields.socialLinks || [])
+        .filter(s => s.url)
+        .map(s => {
+            const icon = s.platform === "custom" ? sanitizeHttpUrl(s.customIconUrl) : (SOCIAL_PLATFORMS[s.platform] || {}).icon;
+            const linkUrl = sanitizeHttpUrl(s.url);
+            if (!icon || !linkUrl) return "";
+            return `<a href="${linkUrl}" style="text-decoration:none;margin-right:10px;"><img src="${icon}" width="${iconSize}" height="${iconSize}" style="border:0;vertical-align:middle;" alt="" /></a>`;
+        })
+        .join("");
 
     let html = `<table cellpadding="0" cellspacing="0" style="font-family:Arial,Helvetica,sans-serif;border-collapse:collapse;"><tr>`;
     html += logoCell;
@@ -134,56 +101,35 @@ function buildSignatureHtml(fields) {
     return html;
 }
 
-// ---------- Builder state <-> saved fields shape ----------
-
 function collectBuilderFields() {
-    flushPreviewToState();
     return {
-        logoUrl: enabledFields.has("logo") ? document.getElementById("f_logoUrl").value.trim() : "",
-        name: enabledFields.has("name") ? builderState.name : "",
-        title: enabledFields.has("titleCompany") ? builderState.titleCompany : "",
-        company: "",
-        email: enabledFields.has("email") ? builderState.email : "",
-        phone: enabledFields.has("phone") ? builderState.phone : "",
-        website: enabledFields.has("website") ? builderState.website : "",
-        socialLinks: enabledFields.has("social") ? collectSocialLinks() : [],
+        logoUrl: document.getElementById("f_logoUrl").value.trim(),
+        name: document.getElementById("f_name").value.trim(),
+        title: document.getElementById("f_title").value.trim(),
+        company: document.getElementById("f_company").value.trim(),
+        email: document.getElementById("f_email").value.trim(),
+        phone: document.getElementById("f_phone").value.trim(),
+        website: document.getElementById("f_website").value.trim(),
+        socialLinks: collectSocialLinks(),
         socialIconSize: parseInt(document.getElementById("f_socialIconSize").value, 10) || DEFAULT_SOCIAL_ICON_SIZE,
         tagline: {
-            text: enabledFields.has("tagline") ? builderState.tagline : "",
-            url: enabledFields.has("tagline") ? document.getElementById("f_taglineUrl").value.trim() : ""
+            text: document.getElementById("f_taglineText").value.trim(),
+            url: document.getElementById("f_taglineUrl").value.trim()
         }
     };
 }
 
 function populateBuilderFields(fields) {
-    fields = fields || {};
-    builderState = {
-        name: fields.name || "",
-        titleCompany: fields.titleCompany || [fields.title, fields.company].filter(Boolean).join(", "),
-        email: fields.email || "",
-        phone: fields.phone || "",
-        website: fields.website || "",
-        tagline: (fields.tagline && fields.tagline.text) || ""
-    };
-
     document.getElementById("f_logoUrl").value = fields.logoUrl || "";
+    document.getElementById("f_name").value = fields.name || "";
+    document.getElementById("f_title").value = fields.title || "";
+    document.getElementById("f_company").value = fields.company || "";
+    document.getElementById("f_email").value = fields.email || "";
+    document.getElementById("f_phone").value = fields.phone || "";
+    document.getElementById("f_website").value = fields.website || "";
     document.getElementById("f_socialIconSize").value = fields.socialIconSize || DEFAULT_SOCIAL_ICON_SIZE;
+    document.getElementById("f_taglineText").value = (fields.tagline || {}).text || "";
     document.getElementById("f_taglineUrl").value = (fields.tagline || {}).url || "";
-
-    enabledFields = new Set();
-    if (fields.logoUrl) enabledFields.add("logo");
-    if (builderState.name) enabledFields.add("name");
-    if (builderState.titleCompany) enabledFields.add("titleCompany");
-    if (builderState.email) enabledFields.add("email");
-    if (builderState.phone) enabledFields.add("phone");
-    if (builderState.website) enabledFields.add("website");
-    if (fields.socialLinks && fields.socialLinks.length) enabledFields.add("social");
-    if (builderState.tagline) enabledFields.add("tagline");
-
-    TOGGLE_FIELDS.forEach(key => {
-        document.getElementById("tg_" + key).checked = enabledFields.has(key);
-    });
-    updateConditionalRowsVisibility();
 
     document.getElementById("socialLinksList").innerHTML = "";
     socialLinks = [];
@@ -192,18 +138,11 @@ function populateBuilderFields(fields) {
     } else {
         addSocialLinkRow();
     }
-
-    renderPreview();
+    updateBuilderPreview();
 }
 
 function clearBuilderFields() {
     populateBuilderFields({});
-}
-
-function updateConditionalRowsVisibility() {
-    document.getElementById("logoUrlRow").classList.toggle("hidden", !enabledFields.has("logo"));
-    document.getElementById("socialLinksSection").classList.toggle("hidden", !enabledFields.has("social"));
-    document.getElementById("taglineUrlRow").classList.toggle("hidden", !enabledFields.has("tagline"));
 }
 
 // ---------- Social links repeatable rows ----------
@@ -262,28 +201,28 @@ function addSocialLinkRow(existing) {
 
     select.addEventListener("change", () => {
         customIconInput.style.display = select.value === "custom" ? "" : "none";
-        renderPreview();
+        updateBuilderPreview();
     });
-    urlInput.addEventListener("input", renderPreview);
-    customIconInput.addEventListener("input", renderPreview);
+    urlInput.addEventListener("input", updateBuilderPreview);
+    customIconInput.addEventListener("input", updateBuilderPreview);
     moveUpBtn.addEventListener("click", () => {
         const prev = row.previousElementSibling;
         if (prev) {
             row.parentNode.insertBefore(row, prev);
-            renderPreview();
+            updateBuilderPreview();
         }
     });
     moveDownBtn.addEventListener("click", () => {
         const next = row.nextElementSibling;
         if (next) {
             row.parentNode.insertBefore(next, row);
-            renderPreview();
+            updateBuilderPreview();
         }
     });
     removeBtn.addEventListener("click", () => {
         row.remove();
         socialLinks = socialLinks.filter(s => s.id !== id);
-        renderPreview();
+        updateBuilderPreview();
     });
 
     row.appendChild(select);
@@ -293,7 +232,7 @@ function addSocialLinkRow(existing) {
     row.appendChild(moveDownBtn);
     row.appendChild(removeBtn);
     document.getElementById("socialLinksList").appendChild(row);
-    renderPreview();
+    updateBuilderPreview();
 }
 
 function collectSocialLinks() {
@@ -321,109 +260,9 @@ function currentMode() {
     return document.getElementById("builderPane").classList.contains("hidden") ? "custom" : "builder";
 }
 
-// ---------- Editable live preview ----------
-
-// Copies whatever's currently displayed in each editable preview field back
-// into builderState. Must run before any preview rebuild (renderPreview) and
-// before reading fields for save, so an in-progress edit that hasn't been
-// blurred yet is never lost.
-function flushPreviewToState() {
-    document.querySelectorAll("#builderPreview [data-field]").forEach((el) => {
-        const key = el.dataset.field;
-        if (!(key in builderState)) return;
-        builderState[key] = el.classList.contains("placeholder-text") ? "" : el.textContent.trim();
-    });
-}
-
-// tag is "div" for a field that owns its whole line (name, titleCompany,
-// tagline) — making the entire line's block the contenteditable target, not
-// just a span sized to its own text, so clicking anywhere on that line
-// (including the empty space after short placeholder text) focuses it
-// reliably instead of leaving an ambiguous boundary with the next field.
-// tag is "span" for fields that share one line with siblings (email/phone/
-// website), which still need padding to avoid a razor-thin click target.
-function fieldBlock(key, tag, extraStyle) {
-    if (!enabledFields.has(key)) return "";
-    const placeholder = FIELD_PLACEHOLDERS[key];
-    const value = builderState[key];
-    const isPlaceholder = !value;
-    const display = escapeHtml(isPlaceholder ? placeholder : value);
-    const cls = isPlaceholder ? "preview-editable placeholder-text" : "preview-editable";
-    return `<${tag} class="${cls}" contenteditable="true" data-field="${key}" data-placeholder="${escapeHtml(placeholder)}" style="${extraStyle || ""}">${display}</${tag}>`;
-}
-
-function buildEditablePreviewHtml() {
-    const hasLogo = enabledFields.has("logo");
-    const logoUrl = document.getElementById("f_logoUrl").value.trim();
-    let logoCell = "";
-    if (hasLogo) {
-        logoCell = logoUrl
-            ? `<td style="vertical-align:middle;padding-right:14px;"><img src="${sanitizeHttpUrl(logoUrl)}" width="70" style="display:block;border:0;" alt="" /></td>`
-            : `<td style="vertical-align:middle;padding-right:14px;"><span class="preview-hint">Add a logo URL below &darr;</span></td>`;
-    }
-
-    const contactPieces = [];
-    if (enabledFields.has("email")) contactPieces.push(fieldBlock("email", "span"));
-    if (enabledFields.has("phone")) contactPieces.push(fieldBlock("phone", "span"));
-    if (enabledFields.has("website")) contactPieces.push(fieldBlock("website", "span"));
-    const contactLine = contactPieces.join(' <span style="color:#999999;">|</span> ');
-
-    const iconSize = parseInt(document.getElementById("f_socialIconSize").value, 10) || DEFAULT_SOCIAL_ICON_SIZE;
-    let socialHtml = "";
-    if (enabledFields.has("social")) {
-        const links = collectSocialLinks();
-        socialHtml = links.length
-            ? renderSocialIconsHtml(links, iconSize)
-            : `<span class="preview-hint">Add a social link below &darr;</span>`;
-    }
-
-    let html = `<table cellpadding="0" cellspacing="0" style="font-family:Arial,Helvetica,sans-serif;border-collapse:collapse;"><tr>`;
-    html += logoCell;
-    html += `<td style="${hasLogo ? "border-left:2px solid #cccccc;padding-left:14px;" : ""}vertical-align:middle;">`;
-    html += fieldBlock("name", "div", "font-size:12pt;font-weight:bold;color:#222222;");
-    html += fieldBlock("titleCompany", "div", "font-size:11pt;font-weight:bold;color:#666666;");
-    if (contactLine) {
-        html += `<div style="font-size:11pt;color:#333333;margin-top:3px;">${contactLine}</div>`;
-    }
-    if (socialHtml) {
-        html += `<div style="margin-top:8px;">${socialHtml}</div>`;
-    }
-    if (enabledFields.size === 0) {
-        html += `<div class="preview-hint">Check a box above to start building your signature.</div>`;
-    }
-    html += `</td></tr>`;
-    if (enabledFields.has("tagline")) {
-        html += `<tr><td colspan="2" style="padding-top:8px;">${fieldBlock("tagline", "div", "font-size:11pt;color:#555555;")}</td></tr>`;
-    }
-    html += `</table>`;
-    return html;
-}
-
-function wireEditableFields() {
-    document.querySelectorAll("#builderPreview [contenteditable]").forEach((el) => {
-        el.addEventListener("focus", () => {
-            if (el.classList.contains("placeholder-text")) {
-                el.textContent = "";
-                el.classList.remove("placeholder-text");
-            }
-        });
-        el.addEventListener("blur", () => {
-            const key = el.dataset.field;
-            const value = el.textContent.trim();
-            builderState[key] = value;
-            if (!value) {
-                el.textContent = el.dataset.placeholder;
-                el.classList.add("placeholder-text");
-            }
-        });
-    });
-}
-
-function renderPreview() {
-    flushPreviewToState();
-    const preview = document.getElementById("builderPreview");
-    preview.innerHTML = buildEditablePreviewHtml();
-    wireEditableFields();
+function updateBuilderPreview() {
+    const fields = collectBuilderFields();
+    document.getElementById("builderPreview").innerHTML = buildSignatureHtml(fields);
 }
 
 // ---------- Wire up ----------
@@ -433,20 +272,8 @@ function wireUpUi() {
     document.getElementById("customTab").addEventListener("click", () => setMode("custom"));
     document.getElementById("addSocialLinkBtn").addEventListener("click", () => addSocialLinkRow());
 
-    TOGGLE_FIELDS.forEach(key => {
-        document.getElementById("tg_" + key).addEventListener("change", (e) => {
-            if (e.target.checked) {
-                enabledFields.add(key);
-            } else {
-                enabledFields.delete(key);
-            }
-            updateConditionalRowsVisibility();
-            renderPreview();
-        });
-    });
-
-    ["f_logoUrl", "f_socialIconSize", "f_taglineUrl"]
-        .forEach(id => document.getElementById(id).addEventListener("input", renderPreview));
+    ["f_logoUrl", "f_name", "f_title", "f_company", "f_email", "f_phone", "f_website", "f_socialIconSize", "f_taglineText", "f_taglineUrl"]
+        .forEach(id => document.getElementById(id).addEventListener("input", updateBuilderPreview));
 
     document.getElementById("useCurrentBtn").addEventListener("click", () => {
         const current = document.getElementById("currentAddress").textContent;
@@ -641,7 +468,7 @@ function onSave() {
     } else {
         const fields = collectBuilderFields();
         if (!fields.name) {
-            showStatus("At least check and enter a name for the builder signature.", true);
+            showStatus("At least enter a name for the builder signature.", true);
             return;
         }
         entry = { mode: "builder", fields, html: buildSignatureHtml(fields) };
