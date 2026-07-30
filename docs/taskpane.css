@@ -173,6 +173,50 @@ h2 {
     min-width: 0;
 }
 
+.toggle-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    margin: 6px 0 10px;
+}
+
+.toggle-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.toggle-item input[type="checkbox"] {
+    margin: 0;
+}
+
+.conditional-field {
+    margin-bottom: 8px;
+}
+
+.preview-editable {
+    outline: none;
+    border-radius: 2px;
+}
+
+.preview-editable:hover,
+.preview-editable:focus {
+    background: #eef2f8;
+}
+
+.placeholder-text {
+    color: #9a9a9a;
+    font-style: italic;
+}
+
+.preview-hint {
+    color: #9a9a9a;
+    font-style: italic;
+    font-size: 12px;
+}
+
 .social-links-list {
     display: flex;
     flex-direction: column;
