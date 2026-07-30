@@ -335,14 +335,21 @@ function flushPreviewToState() {
     });
 }
 
-function fieldSpan(key) {
+// tag is "div" for a field that owns its whole line (name, titleCompany,
+// tagline) — making the entire line's block the contenteditable target, not
+// just a span sized to its own text, so clicking anywhere on that line
+// (including the empty space after short placeholder text) focuses it
+// reliably instead of leaving an ambiguous boundary with the next field.
+// tag is "span" for fields that share one line with siblings (email/phone/
+// website), which still need padding to avoid a razor-thin click target.
+function fieldBlock(key, tag, extraStyle) {
     if (!enabledFields.has(key)) return "";
     const placeholder = FIELD_PLACEHOLDERS[key];
     const value = builderState[key];
     const isPlaceholder = !value;
     const display = escapeHtml(isPlaceholder ? placeholder : value);
     const cls = isPlaceholder ? "preview-editable placeholder-text" : "preview-editable";
-    return `<span class="${cls}" contenteditable="true" data-field="${key}" data-placeholder="${escapeHtml(placeholder)}">${display}</span>`;
+    return `<${tag} class="${cls}" contenteditable="true" data-field="${key}" data-placeholder="${escapeHtml(placeholder)}" style="${extraStyle || ""}">${display}</${tag}>`;
 }
 
 function buildEditablePreviewHtml() {
@@ -356,9 +363,9 @@ function buildEditablePreviewHtml() {
     }
 
     const contactPieces = [];
-    if (enabledFields.has("email")) contactPieces.push(fieldSpan("email"));
-    if (enabledFields.has("phone")) contactPieces.push(fieldSpan("phone"));
-    if (enabledFields.has("website")) contactPieces.push(fieldSpan("website"));
+    if (enabledFields.has("email")) contactPieces.push(fieldBlock("email", "span"));
+    if (enabledFields.has("phone")) contactPieces.push(fieldBlock("phone", "span"));
+    if (enabledFields.has("website")) contactPieces.push(fieldBlock("website", "span"));
     const contactLine = contactPieces.join(' <span style="color:#999999;">|</span> ');
 
     const iconSize = parseInt(document.getElementById("f_socialIconSize").value, 10) || DEFAULT_SOCIAL_ICON_SIZE;
@@ -373,12 +380,8 @@ function buildEditablePreviewHtml() {
     let html = `<table cellpadding="0" cellspacing="0" style="font-family:Arial,Helvetica,sans-serif;border-collapse:collapse;"><tr>`;
     html += logoCell;
     html += `<td style="${hasLogo ? "border-left:2px solid #cccccc;padding-left:14px;" : ""}vertical-align:middle;">`;
-    if (enabledFields.has("name")) {
-        html += `<div style="font-size:12pt;font-weight:bold;color:#222222;">${fieldSpan("name")}</div>`;
-    }
-    if (enabledFields.has("titleCompany")) {
-        html += `<div style="font-size:11pt;font-weight:bold;color:#666666;">${fieldSpan("titleCompany")}</div>`;
-    }
+    html += fieldBlock("name", "div", "font-size:12pt;font-weight:bold;color:#222222;");
+    html += fieldBlock("titleCompany", "div", "font-size:11pt;font-weight:bold;color:#666666;");
     if (contactLine) {
         html += `<div style="font-size:11pt;color:#333333;margin-top:3px;">${contactLine}</div>`;
     }
@@ -390,7 +393,7 @@ function buildEditablePreviewHtml() {
     }
     html += `</td></tr>`;
     if (enabledFields.has("tagline")) {
-        html += `<tr><td colspan="2" style="padding-top:8px;font-size:11pt;color:#555555;">${fieldSpan("tagline")}</td></tr>`;
+        html += `<tr><td colspan="2" style="padding-top:8px;">${fieldBlock("tagline", "div", "font-size:11pt;color:#555555;")}</td></tr>`;
     }
     html += `</table>`;
     return html;

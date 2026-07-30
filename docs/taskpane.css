@@ -199,6 +199,14 @@ h2 {
 .preview-editable {
     outline: none;
     border-radius: 2px;
+    display: inline-block;
+    /* Padding enlarges the actual click/hover hit box (a div field's padding
+       also gives its otherwise text-tight bounding box some breathing room
+       from the next field below it); the matching negative margin cancels
+       the padding out visually so text position/line spacing don't shift. */
+    padding: 3px 4px;
+    margin: -3px -4px;
+    min-width: 12px;
 }
 
 .preview-editable:hover,
