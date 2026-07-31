@@ -7,8 +7,12 @@
          from a real HTTP header) and GitHub Pages doesn't support custom
          headers — everything else below is enforced. This page never
          touches altrans.net or renders anything, so it's tighter than
-         taskpane.html's policy. -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://appsforoffice.microsoft.com; style-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self';" />
+         taskpane.html's policy. 'unsafe-eval' is required: office.js's own
+         internal Microsoft-Ajax serializer calls eval() during its own
+         startup (confirmed live in OWA on taskpane.html — same office.js,
+         same startup path, so this page needs it too). Not our code, can't
+         be avoided; the origin allowlist below is unaffected. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' https://appsforoffice.microsoft.com; style-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self';" />
     <title>Signature Switcher - Event Handler</title>
     <!-- Office JavaScript Library -->
     <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>

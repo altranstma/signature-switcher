@@ -13,8 +13,15 @@
          style="" attributes throughout, and img-src stays open to any https
          host since letting users link to arbitrary logo/icon URLs is a
          feature, not a bug. altrans.net is allowed in script-src only for
-         the self-service logo-list file (see docs/taskpane.js). -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://appsforoffice.microsoft.com https://altrans.net; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; object-src 'none'; base-uri 'self';" />
+         the self-service logo-list file (see docs/taskpane.js).
+         'unsafe-eval' is required in script-src: office.js's own internal
+         Microsoft-Ajax serializer (Sys.Serialization.JavaScriptSerializer)
+         calls eval() during its own startup (observed live in OWA, deserializing
+         locale/culture data) — confirmed via breakpoint, not assumed. This
+         isn't our code and can't be avoided; it only re-permits eval/Function,
+         it doesn't affect the script-src origin allowlist above, which is
+         where the actual injected-script protection lives. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' https://appsforoffice.microsoft.com https://altrans.net; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; object-src 'none'; base-uri 'self';" />
     <title>Manage Signatures</title>
     <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
     <!-- Self-hosted (not a third-party CDN) so this doesn't itself become
