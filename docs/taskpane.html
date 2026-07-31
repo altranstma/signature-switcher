@@ -67,7 +67,6 @@
                     <label class="field-label" for="f_logoPicker">Logo</label>
                     <select id="f_logoPicker"></select>
                     <input id="f_logoUrl" type="text" placeholder="https://example.com/logo.png" autocomplete="off" class="hidden" />
-                    <img id="logoPreview" class="logo-preview hidden" alt="" />
                 </div>
 
                 <div id="emailSection" class="conditional-field hidden">
@@ -112,6 +111,14 @@
                         <button type="button" id="spacingDownBtn" class="stepper-btn">&minus;</button>
                         <span id="spacingValue" class="stepper-value">100%</span>
                         <button type="button" id="spacingUpBtn" class="stepper-btn">+</button>
+                    </div>
+                </div>
+                <div id="logoSizeRow" class="stepper-row conditional-field hidden">
+                    <label class="field-label">Logo size</label>
+                    <div class="stepper">
+                        <button type="button" id="logoSizeDownBtn" class="stepper-btn">&minus;</button>
+                        <span id="logoSizeValue" class="stepper-value">100%</span>
+                        <button type="button" id="logoSizeUpBtn" class="stepper-btn">+</button>
                     </div>
                 </div>
 

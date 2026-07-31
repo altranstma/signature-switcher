@@ -22,6 +22,7 @@ let editingAddress = null; // null = adding new; otherwise the original key bein
 let socialLinks = []; // working list of {id, platform, url, customIconUrl} while editing
 let scalePercent = 100; // "Overall size" stepper, 50-200
 let spacingPercent = 100; // "Line spacing" stepper, 50-200
+let logoScalePercent = 100; // "Logo size" stepper, 50-200 (logo only, on top of Overall size)
 
 Office.onReady(() => {
     document.getElementById("app").classList.remove("hidden");
@@ -56,6 +57,16 @@ function sanitizePhoneForTel(phone) {
     return String(phone || "").replace(/[^\d+]/g, "");
 }
 
+// Lets the user type a bare domain (e.g. "altrans.net") instead of requiring
+// "https://" — the link target gets the protocol added, but the displayed
+// text stays exactly what was typed.
+function normalizeWebsiteUrl(input) {
+    const trimmed = String(input || "").trim();
+    if (!trimmed) return "";
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    return "https://" + trimmed;
+}
+
 function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
 }
@@ -82,6 +93,7 @@ function resolveSocialUrl(platform, value) {
 function buildSignatureHtml(fields) {
     const scale = fields.scale || 1;
     const spacing = fields.lineSpacing || 1;
+    const logoScale = fields.logoScale || 1;
     const pt = (base) => {
         const v = Math.round(base * scale * 10) / 10;
         return (v % 1 === 0) ? String(v) : v.toFixed(1);
@@ -90,7 +102,7 @@ function buildSignatureHtml(fields) {
     const sp = (base) => Math.round(base * spacing);
 
     const logoCell = fields.logoUrl
-        ? `<td style="vertical-align:middle;padding-right:14px;"><img src="${sanitizeHttpUrl(fields.logoUrl)}" width="${px(70)}" style="display:block;border:0;" alt="" /></td>`
+        ? `<td style="vertical-align:middle;padding-right:14px;"><img src="${sanitizeHttpUrl(fields.logoUrl)}" width="${Math.round(70 * scale * logoScale)}" style="display:block;border:0;" alt="" /></td>`
         : "";
 
     const contactParts = [];
@@ -101,7 +113,7 @@ function buildSignatureHtml(fields) {
         contactParts.push(`<a href="tel:${sanitizePhoneForTel(fields.phone)}" style="color:#333333;text-decoration:none;">${escapeHtml(fields.phone)}</a>`);
     }
     if (fields.website) {
-        const url = sanitizeHttpUrl(fields.website);
+        const url = sanitizeHttpUrl(normalizeWebsiteUrl(fields.website));
         contactParts.push(url
             ? `<a href="${url}" style="color:#1155cc;text-decoration:underline;">${escapeHtml(fields.website.replace(/^https?:\/\//i, ""))}</a>`
             : escapeHtml(fields.website));
@@ -157,7 +169,8 @@ function collectBuilderFields() {
             url: document.getElementById("tg_tagline").checked ? document.getElementById("f_taglineUrl").value.trim() : ""
         },
         scale: scalePercent / 100,
-        lineSpacing: spacingPercent / 100
+        lineSpacing: spacingPercent / 100,
+        logoScale: logoScalePercent / 100
     };
 }
 
@@ -184,8 +197,10 @@ function populateBuilderFields(fields) {
 
     scalePercent = clamp(Math.round((fields.scale || 1) * 100), 50, 200);
     spacingPercent = clamp(Math.round((fields.lineSpacing || 1) * 100), 50, 200);
+    logoScalePercent = clamp(Math.round((fields.logoScale || 1) * 100), 50, 200);
     document.getElementById("scaleValue").textContent = scalePercent + "%";
     document.getElementById("spacingValue").textContent = spacingPercent + "%";
+    document.getElementById("logoSizeValue").textContent = logoScalePercent + "%";
 
     document.getElementById("socialLinksList").innerHTML = "";
     socialLinks = [];
@@ -203,6 +218,7 @@ function clearBuilderFields() {
 
 function updateConditionalVisibility() {
     document.getElementById("logoSection").classList.toggle("hidden", !document.getElementById("tg_logo").checked);
+    document.getElementById("logoSizeRow").classList.toggle("hidden", !document.getElementById("tg_logo").checked);
     document.getElementById("emailSection").classList.toggle("hidden", !document.getElementById("tg_email").checked);
     document.getElementById("phoneSection").classList.toggle("hidden", !document.getElementById("tg_phone").checked);
     document.getElementById("websiteSection").classList.toggle("hidden", !document.getElementById("tg_website").checked);
@@ -244,8 +260,9 @@ function populateLogoPicker() {
     });
 }
 
-// Sets the logo URL input/preview and picks the matching dropdown option (or
-// "Custom URL…" if the URL doesn't match any preloaded logo).
+// Sets the logo URL input and picks the matching dropdown option (or
+// "Custom URL…" if the URL doesn't match any preloaded logo). The logo
+// itself is shown in the signature Preview below, not duplicated here.
 function setLogoUrl(url, opts) {
     const picker = document.getElementById("f_logoPicker");
     const urlInput = document.getElementById("f_logoUrl");
@@ -263,18 +280,6 @@ function setLogoUrl(url, opts) {
     } else {
         picker.value = "";
         urlInput.classList.add("hidden");
-    }
-    updateLogoPreview();
-}
-
-function updateLogoPreview() {
-    const preview = document.getElementById("logoPreview");
-    const url = document.getElementById("f_logoUrl").value.trim();
-    if (url) {
-        preview.src = url;
-        preview.classList.remove("hidden");
-    } else {
-        preview.classList.add("hidden");
     }
 }
 
@@ -414,15 +419,14 @@ function wireUpUi() {
     });
 
     ["f_name", "f_title", "f_company", "f_email", "f_phone", "f_website", "f_taglineText", "f_taglineUrl", "f_logoUrl"]
-        .forEach(id => document.getElementById(id).addEventListener("input", () => {
-            if (id === "f_logoUrl") updateLogoPreview();
-            updateBuilderPreview();
-        }));
+        .forEach(id => document.getElementById(id).addEventListener("input", updateBuilderPreview));
 
     document.getElementById("scaleDownBtn").addEventListener("click", () => adjustScale(-10));
     document.getElementById("scaleUpBtn").addEventListener("click", () => adjustScale(10));
     document.getElementById("spacingDownBtn").addEventListener("click", () => adjustSpacing(-10));
     document.getElementById("spacingUpBtn").addEventListener("click", () => adjustSpacing(10));
+    document.getElementById("logoSizeDownBtn").addEventListener("click", () => adjustLogoScale(-10));
+    document.getElementById("logoSizeUpBtn").addEventListener("click", () => adjustLogoScale(10));
 
     document.getElementById("useCurrentBtn").addEventListener("click", () => {
         const current = document.getElementById("currentAddress").textContent;
@@ -501,6 +505,12 @@ function adjustScale(delta) {
 function adjustSpacing(delta) {
     spacingPercent = clamp(spacingPercent + delta, 50, 200);
     document.getElementById("spacingValue").textContent = spacingPercent + "%";
+    updateBuilderPreview();
+}
+
+function adjustLogoScale(delta) {
+    logoScalePercent = clamp(logoScalePercent + delta, 50, 200);
+    document.getElementById("logoSizeValue").textContent = logoScalePercent + "%";
     updateBuilderPreview();
 }
 

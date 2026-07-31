@@ -205,25 +205,16 @@ h2 {
     margin-bottom: 6px;
 }
 
-.logo-preview {
-    display: block;
-    max-height: 40px;
-    max-width: 140px;
-    margin-top: 6px;
-    border: 1px solid #eee;
-    border-radius: 4px;
-    padding: 2px;
-}
-
 .stepper-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 12px;
     margin: 10px 0;
 }
 
 .stepper-row .field-label {
     margin: 0;
+    min-width: 100px;
 }
 
 .stepper {
