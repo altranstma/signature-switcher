@@ -173,6 +173,86 @@ h2 {
     min-width: 0;
 }
 
+.toggle-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    margin: 6px 0 10px;
+}
+
+.toggle-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.toggle-item input[type="checkbox"] {
+    margin: 0;
+}
+
+.conditional-field {
+    margin-bottom: 8px;
+}
+
+#f_logoPicker {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #c7c7c7;
+    border-radius: 4px;
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+.logo-preview {
+    display: block;
+    max-height: 40px;
+    max-width: 140px;
+    margin-top: 6px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    padding: 2px;
+}
+
+.stepper-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 10px 0;
+}
+
+.stepper-row .field-label {
+    margin: 0;
+}
+
+.stepper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.stepper-btn {
+    width: 26px;
+    height: 26px;
+    border: 1px solid #c7c7c7;
+    background: #fafafa;
+    border-radius: 4px;
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.stepper-btn:hover {
+    background: #eef2f8;
+}
+
+.stepper-value {
+    font-size: 13px;
+    min-width: 40px;
+    text-align: center;
+}
+
 .social-links-list {
     display: flex;
     flex-direction: column;

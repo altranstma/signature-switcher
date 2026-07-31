@@ -3,20 +3,29 @@
 const SIGNATURE_MAP_KEY = "signatureMap";
 const SOCIAL_ICON_BASE = "https://altranstma.github.io/signature-switcher/assets/social";
 const DEFAULT_SOCIAL_ICON_SIZE = 24;
+const CLIENT_LOGO_BASE = "https://altrans.net/images/clientlogo/";
+
+// urlTemplate turns a plain username/handle into a full profile URL, so the
+// user only has to type e.g. "danieloliver" instead of the whole link.
+// "custom" has no template — that option is inherently a full URL + custom
+// icon, since there's no known base URL to build from.
 const SOCIAL_PLATFORMS = {
-    instagram: { label: "Instagram", icon: `${SOCIAL_ICON_BASE}/instagram.png` },
-    facebook: { label: "Facebook", icon: `${SOCIAL_ICON_BASE}/facebook.png` },
-    x: { label: "X (Twitter)", icon: `${SOCIAL_ICON_BASE}/x.png` },
-    linkedin: { label: "LinkedIn", icon: `${SOCIAL_ICON_BASE}/linkedin.png` },
-    youtube: { label: "YouTube", icon: `${SOCIAL_ICON_BASE}/youtube.png` },
-    custom: { label: "Custom", icon: null }
+    instagram: { label: "Instagram", icon: `${SOCIAL_ICON_BASE}/instagram.png`, urlTemplate: "https://instagram.com/{u}" },
+    facebook: { label: "Facebook", icon: `${SOCIAL_ICON_BASE}/facebook.png`, urlTemplate: "https://facebook.com/{u}" },
+    x: { label: "X (Twitter)", icon: `${SOCIAL_ICON_BASE}/x.png`, urlTemplate: "https://x.com/{u}" },
+    linkedin: { label: "LinkedIn", icon: `${SOCIAL_ICON_BASE}/linkedin.png`, urlTemplate: "https://linkedin.com/in/{u}" },
+    youtube: { label: "YouTube", icon: `${SOCIAL_ICON_BASE}/youtube.png`, urlTemplate: "https://youtube.com/@{u}" },
+    custom: { label: "Custom", icon: null, urlTemplate: null }
 };
 
 let editingAddress = null; // null = adding new; otherwise the original key being edited
 let socialLinks = []; // working list of {id, platform, url, customIconUrl} while editing
+let scalePercent = 100; // "Overall size" stepper, 50-200
+let spacingPercent = 100; // "Line spacing" stepper, 50-200
 
 Office.onReady(() => {
     document.getElementById("app").classList.remove("hidden");
+    populateLogoPicker();
     detectCurrentAddress();
     renderSignatureList();
     wireUpUi();
@@ -47,11 +56,41 @@ function sanitizePhoneForTel(phone) {
     return String(phone || "").replace(/[^\d+]/g, "");
 }
 
+function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+}
+
+// Turns a social row's stored value into a full profile URL. A value that's
+// already a full URL (either the "custom" platform, or an older saved
+// signature from before usernames-only) is used as-is; otherwise it's
+// treated as a bare username/handle and expanded via the platform's
+// urlTemplate.
+function resolveSocialUrl(platform, value) {
+    const trimmed = String(value || "").trim();
+    if (!trimmed) return "";
+    if (/^https?:\/\//i.test(trimmed)) {
+        return trimmed;
+    }
+    const info = SOCIAL_PLATFORMS[platform];
+    if (!info || !info.urlTemplate) return "";
+    const handle = trimmed.replace(/^[@/]+/, "");
+    return info.urlTemplate.replace("{u}", encodeURIComponent(handle));
+}
+
 // ---------- Signature HTML builder ----------
 
 function buildSignatureHtml(fields) {
+    const scale = fields.scale || 1;
+    const spacing = fields.lineSpacing || 1;
+    const pt = (base) => {
+        const v = Math.round(base * scale * 10) / 10;
+        return (v % 1 === 0) ? String(v) : v.toFixed(1);
+    };
+    const px = (base) => Math.round(base * scale);
+    const sp = (base) => Math.round(base * spacing);
+
     const logoCell = fields.logoUrl
-        ? `<td style="vertical-align:middle;padding-right:14px;"><img src="${sanitizeHttpUrl(fields.logoUrl)}" width="70" style="display:block;border:0;" alt="" /></td>`
+        ? `<td style="vertical-align:middle;padding-right:14px;"><img src="${sanitizeHttpUrl(fields.logoUrl)}" width="${px(70)}" style="display:block;border:0;" alt="" /></td>`
         : "";
 
     const contactParts = [];
@@ -69,14 +108,15 @@ function buildSignatureHtml(fields) {
     }
     const contactLine = contactParts.join(' <span style="color:#999999;">|</span> ');
 
-    const titleCompany = [fields.title, fields.company].filter(Boolean).join(", ");
+    const titleCompanyParts = [fields.title, fields.company].filter(Boolean).map(escapeHtml);
+    const titleCompany = titleCompanyParts.join(' <span style="color:#999999;">|</span> ');
 
-    const iconSize = fields.socialIconSize || DEFAULT_SOCIAL_ICON_SIZE;
+    const iconSize = px(fields.socialIconSize || DEFAULT_SOCIAL_ICON_SIZE);
     const socialImgs = (fields.socialLinks || [])
         .filter(s => s.url)
         .map(s => {
             const icon = s.platform === "custom" ? sanitizeHttpUrl(s.customIconUrl) : (SOCIAL_PLATFORMS[s.platform] || {}).icon;
-            const linkUrl = sanitizeHttpUrl(s.url);
+            const linkUrl = sanitizeHttpUrl(resolveSocialUrl(s.platform, s.url));
             if (!icon || !linkUrl) return "";
             return `<a href="${linkUrl}" style="text-decoration:none;margin-right:10px;"><img src="${icon}" width="${iconSize}" height="${iconSize}" style="border:0;vertical-align:middle;" alt="" /></a>`;
         })
@@ -85,17 +125,17 @@ function buildSignatureHtml(fields) {
     let html = `<table cellpadding="0" cellspacing="0" style="font-family:Arial,Helvetica,sans-serif;border-collapse:collapse;"><tr>`;
     html += logoCell;
     html += `<td style="${fields.logoUrl ? "border-left:2px solid #cccccc;padding-left:14px;" : ""}vertical-align:middle;">`;
-    if (fields.name) html += `<div style="font-size:12pt;font-weight:bold;color:#222222;">${escapeHtml(fields.name)}</div>`;
-    if (titleCompany) html += `<div style="font-size:11pt;font-weight:bold;color:#666666;">${escapeHtml(titleCompany)}</div>`;
-    if (contactLine) html += `<div style="font-size:11pt;color:#333333;margin-top:3px;">${contactLine}</div>`;
-    if (socialImgs) html += `<div style="margin-top:8px;">${socialImgs}</div>`;
+    if (fields.name) html += `<div style="font-size:${pt(12)}pt;font-weight:bold;color:#222222;">${escapeHtml(fields.name)}</div>`;
+    if (titleCompany) html += `<div style="font-size:${pt(10)}pt;font-weight:bold;color:#666666;margin-top:${sp(2)}px;">${titleCompany}</div>`;
+    if (contactLine) html += `<div style="font-size:${pt(8.5)}pt;color:#333333;margin-top:${sp(3)}px;">${contactLine}</div>`;
+    if (socialImgs) html += `<div style="margin-top:${sp(8)}px;">${socialImgs}</div>`;
     html += `</td></tr>`;
     if (fields.tagline && fields.tagline.text) {
         const taglineUrl = sanitizeHttpUrl(fields.tagline.url);
         const taglineContent = taglineUrl
             ? `<a href="${taglineUrl}" style="color:#1155cc;text-decoration:underline;">${escapeHtml(fields.tagline.text)}</a>`
             : escapeHtml(fields.tagline.text);
-        html += `<tr><td colspan="2" style="padding-top:8px;font-size:11pt;color:#555555;">${taglineContent}</td></tr>`;
+        html += `<tr><td colspan="2" style="padding-top:${sp(8)}px;font-size:${pt(8.5)}pt;color:#555555;">${taglineContent}</td></tr>`;
     }
     html += `</table>`;
     return html;
@@ -103,33 +143,49 @@ function buildSignatureHtml(fields) {
 
 function collectBuilderFields() {
     return {
-        logoUrl: document.getElementById("f_logoUrl").value.trim(),
+        logoUrl: document.getElementById("tg_logo").checked ? document.getElementById("f_logoUrl").value.trim() : "",
         name: document.getElementById("f_name").value.trim(),
         title: document.getElementById("f_title").value.trim(),
         company: document.getElementById("f_company").value.trim(),
-        email: document.getElementById("f_email").value.trim(),
-        phone: document.getElementById("f_phone").value.trim(),
-        website: document.getElementById("f_website").value.trim(),
-        socialLinks: collectSocialLinks(),
-        socialIconSize: parseInt(document.getElementById("f_socialIconSize").value, 10) || DEFAULT_SOCIAL_ICON_SIZE,
+        email: document.getElementById("tg_email").checked ? document.getElementById("f_email").value.trim() : "",
+        phone: document.getElementById("tg_phone").checked ? document.getElementById("f_phone").value.trim() : "",
+        website: document.getElementById("tg_website").checked ? document.getElementById("f_website").value.trim() : "",
+        socialLinks: document.getElementById("tg_social").checked ? collectSocialLinks() : [],
+        socialIconSize: DEFAULT_SOCIAL_ICON_SIZE,
         tagline: {
-            text: document.getElementById("f_taglineText").value.trim(),
-            url: document.getElementById("f_taglineUrl").value.trim()
-        }
+            text: document.getElementById("tg_tagline").checked ? document.getElementById("f_taglineText").value.trim() : "",
+            url: document.getElementById("tg_tagline").checked ? document.getElementById("f_taglineUrl").value.trim() : ""
+        },
+        scale: scalePercent / 100,
+        lineSpacing: spacingPercent / 100
     };
 }
 
 function populateBuilderFields(fields) {
-    document.getElementById("f_logoUrl").value = fields.logoUrl || "";
+    fields = fields || {};
     document.getElementById("f_name").value = fields.name || "";
     document.getElementById("f_title").value = fields.title || "";
     document.getElementById("f_company").value = fields.company || "";
     document.getElementById("f_email").value = fields.email || "";
     document.getElementById("f_phone").value = fields.phone || "";
     document.getElementById("f_website").value = fields.website || "";
-    document.getElementById("f_socialIconSize").value = fields.socialIconSize || DEFAULT_SOCIAL_ICON_SIZE;
     document.getElementById("f_taglineText").value = (fields.tagline || {}).text || "";
     document.getElementById("f_taglineUrl").value = (fields.tagline || {}).url || "";
+
+    setLogoUrl(fields.logoUrl || "");
+
+    document.getElementById("tg_logo").checked = !!fields.logoUrl;
+    document.getElementById("tg_email").checked = !!fields.email;
+    document.getElementById("tg_phone").checked = !!fields.phone;
+    document.getElementById("tg_website").checked = !!fields.website;
+    document.getElementById("tg_social").checked = !!(fields.socialLinks && fields.socialLinks.length);
+    document.getElementById("tg_tagline").checked = !!((fields.tagline || {}).text);
+    updateConditionalVisibility();
+
+    scalePercent = clamp(Math.round((fields.scale || 1) * 100), 50, 200);
+    spacingPercent = clamp(Math.round((fields.lineSpacing || 1) * 100), 50, 200);
+    document.getElementById("scaleValue").textContent = scalePercent + "%";
+    document.getElementById("spacingValue").textContent = spacingPercent + "%";
 
     document.getElementById("socialLinksList").innerHTML = "";
     socialLinks = [];
@@ -143,6 +199,83 @@ function populateBuilderFields(fields) {
 
 function clearBuilderFields() {
     populateBuilderFields({});
+}
+
+function updateConditionalVisibility() {
+    document.getElementById("logoSection").classList.toggle("hidden", !document.getElementById("tg_logo").checked);
+    document.getElementById("emailSection").classList.toggle("hidden", !document.getElementById("tg_email").checked);
+    document.getElementById("phoneSection").classList.toggle("hidden", !document.getElementById("tg_phone").checked);
+    document.getElementById("websiteSection").classList.toggle("hidden", !document.getElementById("tg_website").checked);
+    document.getElementById("socialSection").classList.toggle("hidden", !document.getElementById("tg_social").checked);
+    document.getElementById("taglineSection").classList.toggle("hidden", !document.getElementById("tg_tagline").checked);
+}
+
+// ---------- Logo picker ----------
+
+function populateLogoPicker() {
+    const picker = document.getElementById("f_logoPicker");
+    picker.innerHTML = "";
+
+    const placeholderOpt = document.createElement("option");
+    placeholderOpt.value = "";
+    placeholderOpt.textContent = "— Select a logo —";
+    picker.appendChild(placeholderOpt);
+
+    (window.CLIENT_LOGOS || []).forEach(logo => {
+        const opt = document.createElement("option");
+        opt.value = logo.url || (CLIENT_LOGO_BASE + logo.file);
+        opt.textContent = logo.name || logo.file;
+        picker.appendChild(opt);
+    });
+
+    const customOpt = document.createElement("option");
+    customOpt.value = "__custom__";
+    customOpt.textContent = "Custom URL…";
+    picker.appendChild(customOpt);
+
+    picker.addEventListener("change", () => {
+        const val = picker.value;
+        if (val === "__custom__") {
+            setLogoUrl("", { showCustomInput: true });
+        } else {
+            setLogoUrl(val);
+        }
+        updateBuilderPreview();
+    });
+}
+
+// Sets the logo URL input/preview and picks the matching dropdown option (or
+// "Custom URL…" if the URL doesn't match any preloaded logo).
+function setLogoUrl(url, opts) {
+    const picker = document.getElementById("f_logoPicker");
+    const urlInput = document.getElementById("f_logoUrl");
+    const forceCustom = opts && opts.showCustomInput;
+
+    urlInput.value = url || "";
+
+    const matchingOption = Array.from(picker.options).find(o => o.value === url);
+    if (!forceCustom && url && matchingOption) {
+        picker.value = url;
+        urlInput.classList.add("hidden");
+    } else if (url || forceCustom) {
+        picker.value = "__custom__";
+        urlInput.classList.remove("hidden");
+    } else {
+        picker.value = "";
+        urlInput.classList.add("hidden");
+    }
+    updateLogoPreview();
+}
+
+function updateLogoPreview() {
+    const preview = document.getElementById("logoPreview");
+    const url = document.getElementById("f_logoUrl").value.trim();
+    if (url) {
+        preview.src = url;
+        preview.classList.remove("hidden");
+    } else {
+        preview.classList.add("hidden");
+    }
 }
 
 // ---------- Social links repeatable rows ----------
@@ -169,7 +302,7 @@ function addSocialLinkRow(existing) {
     const urlInput = document.createElement("input");
     urlInput.type = "text";
     urlInput.className = "social-url";
-    urlInput.placeholder = "Profile URL";
+    urlInput.placeholder = entry.platform === "custom" ? "Profile URL" : "Username";
     urlInput.value = entry.url || "";
 
     const customIconInput = document.createElement("input");
@@ -201,6 +334,7 @@ function addSocialLinkRow(existing) {
 
     select.addEventListener("change", () => {
         customIconInput.style.display = select.value === "custom" ? "" : "none";
+        urlInput.placeholder = select.value === "custom" ? "Profile URL" : "Username";
         updateBuilderPreview();
     });
     urlInput.addEventListener("input", updateBuilderPreview);
@@ -272,8 +406,23 @@ function wireUpUi() {
     document.getElementById("customTab").addEventListener("click", () => setMode("custom"));
     document.getElementById("addSocialLinkBtn").addEventListener("click", () => addSocialLinkRow());
 
-    ["f_logoUrl", "f_name", "f_title", "f_company", "f_email", "f_phone", "f_website", "f_socialIconSize", "f_taglineText", "f_taglineUrl"]
-        .forEach(id => document.getElementById(id).addEventListener("input", updateBuilderPreview));
+    ["tg_logo", "tg_email", "tg_phone", "tg_website", "tg_social", "tg_tagline"].forEach(id => {
+        document.getElementById(id).addEventListener("change", () => {
+            updateConditionalVisibility();
+            updateBuilderPreview();
+        });
+    });
+
+    ["f_name", "f_title", "f_company", "f_email", "f_phone", "f_website", "f_taglineText", "f_taglineUrl", "f_logoUrl"]
+        .forEach(id => document.getElementById(id).addEventListener("input", () => {
+            if (id === "f_logoUrl") updateLogoPreview();
+            updateBuilderPreview();
+        }));
+
+    document.getElementById("scaleDownBtn").addEventListener("click", () => adjustScale(-10));
+    document.getElementById("scaleUpBtn").addEventListener("click", () => adjustScale(10));
+    document.getElementById("spacingDownBtn").addEventListener("click", () => adjustSpacing(-10));
+    document.getElementById("spacingUpBtn").addEventListener("click", () => adjustSpacing(10));
 
     document.getElementById("useCurrentBtn").addEventListener("click", () => {
         const current = document.getElementById("currentAddress").textContent;
@@ -341,6 +490,18 @@ function wireUpUi() {
             closeLinkUrlRow();
         }
     });
+}
+
+function adjustScale(delta) {
+    scalePercent = clamp(scalePercent + delta, 50, 200);
+    document.getElementById("scaleValue").textContent = scalePercent + "%";
+    updateBuilderPreview();
+}
+
+function adjustSpacing(delta) {
+    spacingPercent = clamp(spacingPercent + delta, 50, 200);
+    document.getElementById("spacingValue").textContent = spacingPercent + "%";
+    updateBuilderPreview();
 }
 
 function detectCurrentAddress() {

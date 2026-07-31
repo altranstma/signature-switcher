@@ -39,9 +39,6 @@
             </div>
 
             <div id="builderPane">
-                <label class="field-label" for="f_logoUrl">Logo image URL</label>
-                <input id="f_logoUrl" type="text" placeholder="https://example.com/logo.png" autocomplete="off" />
-
                 <label class="field-label" for="f_name">Full name</label>
                 <input id="f_name" type="text" placeholder="Daniel Oliver" autocomplete="off" />
 
@@ -56,31 +53,67 @@
                     </div>
                 </div>
 
-                <div class="field-row">
-                    <div>
-                        <label class="field-label" for="f_email">Email</label>
-                        <input id="f_email" type="text" placeholder="admin@example.com" autocomplete="off" />
-                    </div>
-                    <div>
-                        <label class="field-label" for="f_phone">Phone</label>
-                        <input id="f_phone" type="text" placeholder="408-258-7267, 503" autocomplete="off" />
-                    </div>
+                <label class="field-label">Include in signature</label>
+                <div class="toggle-grid">
+                    <label class="toggle-item"><input type="checkbox" id="tg_logo" /> Logo</label>
+                    <label class="toggle-item"><input type="checkbox" id="tg_email" /> Email</label>
+                    <label class="toggle-item"><input type="checkbox" id="tg_phone" /> Phone</label>
+                    <label class="toggle-item"><input type="checkbox" id="tg_website" /> Website</label>
+                    <label class="toggle-item"><input type="checkbox" id="tg_social" /> Social links</label>
+                    <label class="toggle-item"><input type="checkbox" id="tg_tagline" /> Tagline</label>
                 </div>
 
-                <label class="field-label" for="f_website">Website (optional, shown instead of/with email)</label>
-                <input id="f_website" type="text" placeholder="https://altrans.net" autocomplete="off" />
+                <div id="logoSection" class="conditional-field hidden">
+                    <label class="field-label" for="f_logoPicker">Logo</label>
+                    <select id="f_logoPicker"></select>
+                    <input id="f_logoUrl" type="text" placeholder="https://example.com/logo.png" autocomplete="off" class="hidden" />
+                    <img id="logoPreview" class="logo-preview hidden" alt="" />
+                </div>
 
-                <label class="field-label">Social links</label>
-                <div id="socialLinksList" class="social-links-list"></div>
-                <button type="button" id="addSocialLinkBtn" class="link-btn">+ Add social link</button>
+                <div id="emailSection" class="conditional-field hidden">
+                    <label class="field-label" for="f_email">Email</label>
+                    <input id="f_email" type="text" placeholder="admin@example.com" autocomplete="off" />
+                </div>
 
-                <label class="field-label" for="f_socialIconSize">Social icon size (px)</label>
-                <input id="f_socialIconSize" type="number" min="12" max="48" step="2" value="24" />
+                <div id="phoneSection" class="conditional-field hidden">
+                    <label class="field-label" for="f_phone">Phone</label>
+                    <input id="f_phone" type="text" placeholder="408-258-7267, 503" autocomplete="off" />
+                </div>
 
-                <label class="field-label" for="f_taglineText">Tagline (optional)</label>
-                <input id="f_taglineText" type="text" placeholder="Have you heard? Click to receive updates." autocomplete="off" />
-                <label class="field-label" for="f_taglineUrl">Tagline link (optional)</label>
-                <input id="f_taglineUrl" type="text" placeholder="https://example.com/updates" autocomplete="off" />
+                <div id="websiteSection" class="conditional-field hidden">
+                    <label class="field-label" for="f_website">Website</label>
+                    <input id="f_website" type="text" placeholder="https://altrans.net" autocomplete="off" />
+                </div>
+
+                <div id="socialSection" class="conditional-field hidden">
+                    <label class="field-label">Social links</label>
+                    <div id="socialLinksList" class="social-links-list"></div>
+                    <button type="button" id="addSocialLinkBtn" class="link-btn">+ Add social link</button>
+                </div>
+
+                <div id="taglineSection" class="conditional-field hidden">
+                    <label class="field-label" for="f_taglineText">Tagline</label>
+                    <input id="f_taglineText" type="text" placeholder="Have you heard? Click to receive updates." autocomplete="off" />
+                    <label class="field-label" for="f_taglineUrl">Tagline link (optional)</label>
+                    <input id="f_taglineUrl" type="text" placeholder="https://example.com/updates" autocomplete="off" />
+                </div>
+
+                <div class="stepper-row">
+                    <label class="field-label">Overall size</label>
+                    <div class="stepper">
+                        <button type="button" id="scaleDownBtn" class="stepper-btn">&minus;</button>
+                        <span id="scaleValue" class="stepper-value">100%</span>
+                        <button type="button" id="scaleUpBtn" class="stepper-btn">+</button>
+                    </div>
+                </div>
+                <div class="stepper-row">
+                    <label class="field-label">Line spacing</label>
+                    <div class="stepper">
+                        <button type="button" id="spacingDownBtn" class="stepper-btn">&minus;</button>
+                        <span id="spacingValue" class="stepper-value">100%</span>
+                        <button type="button" id="spacingUpBtn" class="stepper-btn">+</button>
+                    </div>
+                </div>
 
                 <label class="field-label">Preview</label>
                 <div id="builderPreview" class="builder-preview"></div>
@@ -117,6 +150,11 @@
         </section>
     </div>
 
+    <!-- Client-maintained list of preloaded logos, self-served from the
+         user's own site (no CORS/server config needed since this loads as a
+         normal script, not a fetch()). Absent/404 today is fine — the logo
+         picker degrades to just a custom-URL field until this file exists. -->
+    <script type="text/javascript" src="https://altrans.net/images/clientlogo/index.js"></script>
     <script type="text/javascript" src="taskpane.js"></script>
 </body>
 </html>
