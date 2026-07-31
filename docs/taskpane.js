@@ -71,6 +71,21 @@ function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
 }
 
+// Custom HTML mode lets users paste signatures from anywhere (Word, old
+// emails, random templates found online), so it's the one path in this app
+// that isn't built entirely from our own escaped field values. DOMPurify
+// strips event-handler attributes (onerror, onload, ...) and dangerous tags
+// (script, iframe, object, ...) that would otherwise execute the next time
+// this HTML is loaded back into a real innerHTML assignment for editing.
+// Returns null (not the original HTML) if the sanitizer failed to load, so
+// callers fail closed instead of ever showing/saving unsanitized content.
+function sanitizeSignatureHtml(html) {
+    if (typeof DOMPurify === "undefined") {
+        return null;
+    }
+    return DOMPurify.sanitize(html);
+}
+
 // Turns a social row's stored value into a full profile URL. A value that's
 // already a full URL (either the "custom" platform, or an older saved
 // signature from before usernames-only) is used as-is; otherwise it's
@@ -473,16 +488,25 @@ function wireUpUi() {
 
     document.getElementById("linkUrlInsertBtn").addEventListener("click", () => {
         const url = document.getElementById("linkUrlInput").value.trim();
-        if (url) {
-            const editor = document.getElementById("signatureEditor");
-            editor.focus();
-            const selection = window.getSelection();
-            if (savedSelectionRange) {
-                selection.removeAllRanges();
-                selection.addRange(savedSelectionRange);
-            }
-            document.execCommand("createLink", false, url);
+        if (!url) {
+            closeLinkUrlRow();
+            return;
         }
+        // Reject non-http(s) schemes (e.g. javascript:) — same pattern
+        // sanitizeHttpUrl() already uses elsewhere. Keep the row open on
+        // failure so the user can fix it instead of silently losing it.
+        if (!/^https?:\/\//i.test(url)) {
+            showStatus("Links must start with http:// or https://", true);
+            return;
+        }
+        const editor = document.getElementById("signatureEditor");
+        editor.focus();
+        const selection = window.getSelection();
+        if (savedSelectionRange) {
+            selection.removeAllRanges();
+            selection.addRange(savedSelectionRange);
+        }
+        document.execCommand("createLink", false, url);
         closeLinkUrlRow();
     });
     document.getElementById("linkUrlCancelBtn").addEventListener("click", closeLinkUrlRow);
@@ -599,7 +623,13 @@ function loadAddressIntoEditor(address) {
 
     if (entry && entry.mode === "custom") {
         setMode("custom");
-        document.getElementById("signatureEditor").innerHTML = entry.html || "";
+        const safeHtml = sanitizeSignatureHtml(entry.html || "");
+        if (safeHtml === null) {
+            showStatus("Could not load signature: content sanitizer failed to load. Try reloading the task pane.", true);
+            document.getElementById("signatureEditor").innerHTML = "";
+        } else {
+            document.getElementById("signatureEditor").innerHTML = safeHtml;
+        }
     } else if (entry && entry.fields) {
         setMode("builder");
         populateBuilderFields(entry.fields);
@@ -630,9 +660,14 @@ function onSave() {
     const mode = currentMode();
     let entry;
     if (mode === "custom") {
-        const html = document.getElementById("signatureEditor").innerHTML.trim();
-        if (!html) {
+        const rawHtml = document.getElementById("signatureEditor").innerHTML.trim();
+        if (!rawHtml) {
             showStatus("Signature can't be empty.", true);
+            return;
+        }
+        const html = sanitizeSignatureHtml(rawHtml);
+        if (html === null) {
+            showStatus("Could not save: content sanitizer failed to load. Try reloading the task pane.", true);
             return;
         }
         entry = { mode: "custom", html };

@@ -18,6 +18,14 @@ function getSignatureMap() {
 
 const LOG_PREFIX = "[SigSwitcher]";
 
+function sanitizeConfiguredSignature(html) {
+    if (typeof DOMPurify === "undefined") {
+        console.log(LOG_PREFIX, "DOMPurify unavailable - not applying signature to be safe");
+        return null;
+    }
+    return DOMPurify.sanitize(html);
+}
+
 function applyForCurrentAddress(event) {
     console.log(LOG_PREFIX, "handler invoked");
     const item = Office.context.mailbox.item;
@@ -35,7 +43,14 @@ function applyForCurrentAddress(event) {
         console.log(LOG_PREFIX, "address =", address, "signatureMap keys =", Object.keys(signatureMap));
         const entry = signatureMap[address];
         // Entries are {mode, html, fields?} objects; tolerate a legacy plain-string entry too.
-        const configuredSignature = entry && (typeof entry === "string" ? entry : entry.html);
+        const rawSignature = entry && (typeof entry === "string" ? entry : entry.html);
+        // Defense in depth alongside the sanitization already done when a
+        // Custom HTML signature is saved (docs/taskpane.js) — re-sanitizing
+        // here also covers any signature saved before that fix existed.
+        // A falsy result (sanitizer unavailable, or nothing configured) is
+        // treated by the branches below exactly like "no signature for this
+        // address" — fails closed rather than ever applying unsanitized HTML.
+        const configuredSignature = rawSignature ? sanitizeConfiguredSignature(rawSignature) : rawSignature;
         console.log(LOG_PREFIX, "configuredSignature found?", !!configuredSignature, "length =", configuredSignature ? configuredSignature.length : 0);
 
         item.loadCustomPropertiesAsync((propsResult) => {

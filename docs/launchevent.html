@@ -3,9 +3,19 @@
 <head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <!-- frame-ancestors can't be enforced via <meta> (browsers only honor it
+         from a real HTTP header) and GitHub Pages doesn't support custom
+         headers — everything else below is enforced. This page never
+         touches altrans.net or renders anything, so it's tighter than
+         taskpane.html's policy. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://appsforoffice.microsoft.com; style-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self';" />
     <title>Signature Switcher - Event Handler</title>
     <!-- Office JavaScript Library -->
     <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <!-- Self-hosted, same as taskpane.html — sanitizes a saved Custom HTML
+         signature before it's applied to the compose body, as defense in
+         depth alongside the sanitization already done when it was saved. -->
+    <script type="text/javascript" src="vendor/purify.min.js"></script>
 </head>
 <body>
     <!-- No UI: this page only exists to host the event handler script for the

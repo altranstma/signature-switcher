@@ -3,8 +3,24 @@
 <head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <!-- frame-ancestors can't be enforced here — browsers only honor that
+         directive from a real HTTP response header, never from a <meta> tag,
+         and GitHub Pages doesn't support custom headers. Everything else
+         below IS enforced. script-src intentionally excludes 'unsafe-inline'
+         (nothing in this app uses inline <script> blocks or on*="" handlers,
+         so this is a real restriction, not a no-op) — style-src needs
+         'unsafe-inline' since the generated signature HTML relies on inline
+         style="" attributes throughout, and img-src stays open to any https
+         host since letting users link to arbitrary logo/icon URLs is a
+         feature, not a bug. altrans.net is allowed in script-src only for
+         the self-service logo-list file (see docs/taskpane.js). -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://appsforoffice.microsoft.com https://altrans.net; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; object-src 'none'; base-uri 'self';" />
     <title>Manage Signatures</title>
     <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <!-- Self-hosted (not a third-party CDN) so this doesn't itself become
+         another script-src origin to trust — see the security review this
+         responds to. -->
+    <script type="text/javascript" src="vendor/purify.min.js"></script>
     <link rel="stylesheet" href="taskpane.css" />
 </head>
 <body>
