@@ -152,13 +152,12 @@
 
     <!-- Client-maintained list of preloaded logos, self-served from the
          user's own site (no CORS/server config needed since this loads as a
-         normal script, not a fetch()). Named .txt, not .js, because
-         WordPress's Media Library blocks .js uploads by default; browsers
-         don't require a script's Content-Type to be JavaScript to execute a
-         classic (non-module) <script> tag, so this works despite the
-         extension. Absent/404 today is fine — the logo picker degrades to
-         just a custom-URL field until this file exists. -->
-    <script type="text/javascript" src="https://altrans.net/images/clientlogo/index.txt"></script>
+         normal script, not a fetch()). Files are uploaded via FTP directly,
+         bypassing WordPress's Media Library entirely, so its .js-upload
+         restriction never applied — a plain .js file works fine here.
+         Absent/404 today is fine — the logo picker degrades to just a
+         custom-URL field until this file exists. -->
+    <script type="text/javascript" src="https://altrans.net/images/clientlogos/index.js"></script>
     <script type="text/javascript" src="taskpane.js"></script>
 </body>
 </html>

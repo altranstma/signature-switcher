@@ -3,7 +3,7 @@
 const SIGNATURE_MAP_KEY = "signatureMap";
 const SOCIAL_ICON_BASE = "https://altranstma.github.io/signature-switcher/assets/social";
 const DEFAULT_SOCIAL_ICON_SIZE = 24;
-const CLIENT_LOGO_BASE = "https://altrans.net/images/clientlogo/";
+const CLIENT_LOGO_BASE = "https://altrans.net/images/clientlogos/";
 
 // urlTemplate turns a plain username/handle into a full profile URL, so the
 // user only has to type e.g. "danieloliver" instead of the whole link.
