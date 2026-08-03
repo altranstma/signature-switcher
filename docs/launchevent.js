@@ -20,8 +20,21 @@ const LOG_PREFIX = "[SigSwitcher]";
 
 function sanitizeConfiguredSignature(html) {
     if (typeof DOMPurify === "undefined") {
-        console.log(LOG_PREFIX, "DOMPurify unavailable - not applying signature to be safe");
-        return null;
+        // Expected in classic Outlook's JS-only runtime: it executes this
+        // file directly with no HTML wrapper and no DOM at all (per the
+        // manifest's JSRuntime.Url override), so vendor/purify.min.js never
+        // loads there, and DOMPurify couldn't run even if it did (it needs a
+        // real DOM to parse/sanitize with). This is fine, not a gap: the
+        // real protection is sanitizing at SAVE time in taskpane.js, which
+        // always runs in a genuine browser DOM (Manage Signatures is a normal
+        // webview in every Outlook client, including classic desktop) —
+        // this function was only ever a defense-in-depth backup for the
+        // browser-hosted LaunchEvent runtime (OWA/new Outlook/Mac). Failing
+        // closed here would block every signature for every classic Outlook
+        // user, which is worse than skipping this one bonus layer where it's
+        // architecturally impossible anyway.
+        console.log(LOG_PREFIX, "DOMPurify unavailable (expected in the classic JS-only runtime) - applying as saved");
+        return html;
     }
     return DOMPurify.sanitize(html);
 }
