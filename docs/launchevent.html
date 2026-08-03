@@ -11,8 +11,17 @@
          internal Microsoft-Ajax serializer calls eval() during its own
          startup (confirmed live in OWA on taskpane.html — same office.js,
          same startup path, so this page needs it too). Not our code, can't
-         be avoided; the origin allowlist below is unaffected. -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' https://appsforoffice.microsoft.com; style-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self';" />
+         be avoided; the origin allowlist below is unaffected.
+         https://ajax.aspnetcdn.com is included defensively for the same
+         reason as taskpane.html: classic Outlook desktop's bootstrap loads
+         the legacy Microsoft Ajax library from this second Microsoft CDN
+         instead of bundling it inline. Not proven needed here specifically
+         (classic Outlook's JS-only runtime loads launchevent.js directly,
+         bypassing this HTML file entirely, and signature switching there is
+         confirmed working without this), but cheap to include in case
+         another browser-hosted client (Mac, new Outlook) hits the same
+         dependency via this page. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' https://appsforoffice.microsoft.com https://ajax.aspnetcdn.com; style-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self';" />
     <title>Signature Switcher - Event Handler</title>
     <!-- Office JavaScript Library -->
     <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>

@@ -20,8 +20,15 @@
          locale/culture data) — confirmed via breakpoint, not assumed. This
          isn't our code and can't be avoided; it only re-permits eval/Function,
          it doesn't affect the script-src origin allowlist above, which is
-         where the actual injected-script protection lives. -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' https://appsforoffice.microsoft.com https://altrans.net; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; object-src 'none'; base-uri 'self';" />
+         where the actual injected-script protection lives.
+         https://ajax.aspnetcdn.com is required too: classic Outlook desktop's
+         own bootstrap (outlook-win32-16.02.js, not our code) dynamically
+         loads the same legacy Microsoft Ajax library from this second
+         Microsoft-owned CDN instead of bundling it inline the way OWA's
+         office.js does — confirmed live via breakpoint (blocked load throws
+         "Not able to load MicrosoftAjax.js.", which aborts Office.onReady()
+         entirely, causing the blank pane this was chasing). -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' https://appsforoffice.microsoft.com https://ajax.aspnetcdn.com https://altrans.net; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; object-src 'none'; base-uri 'self';" />
     <title>Manage Signatures</title>
     <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
     <!-- Self-hosted (not a third-party CDN) so this doesn't itself become
